@@ -10,7 +10,7 @@ foreach ( $directory in @('Public', 'Private') ) {
 }
 
 # VARIABLES
-$CSR_Template = "$PSScritpRoot\Private\req.conf"
+$CSR_Template = "$PSScriptRoot\Private\req.conf"
 
 # EXPORT MEMBERS
 # THESE ARE SPECIFIED IN THE MODULE MANIFEST AND THEREFORE DON'T NEED TO BE LISTED HERE
