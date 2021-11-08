@@ -21,14 +21,20 @@ Confirm-CSR -CSR "$root\www.company.com.csr"
 
 
 # VERIFY SIGNED CERTIFICATE
-Confirm-SignedCSR -SignedCSR "$root\digicert\<SIGNED_CSR>.crt"
+Get-CertificateDetails -Path "$root\digicert\<SIGNED_CSR>.crt"
+
+# VERIFY INTERMEDIATE CERTIFICATE
+Get-CertificateDetails -Path "$root\digicert\DigiCertCA.crt"
+
+# VERIFY ROOT CERTIFICATE
+Get-CertificateDetails -Path "$root\digicert\TrustedRoot.crt"
 
 # COMPLETE PROCESS BY EXPORTING PFX/P12
 $pfxParams = @{
     OutputDirectory = "$root\completed"
     SignedCSR       = "$root\digicert\<CERTIFICATE>.crt"
     Key             = "$root\<PRIVATE_KEY>.key"
-    RootCA          = "$root\digicert\DigiCertCA.crt"
-    IntermediateCA  = "$root\digicert\TrustedRoot.crt"
+    RootCA          = "$root\digicert\TrustedRoot.crt"
+    IntermediateCA  = "$root\digicert\DigiCertCA.crt"
 }
 Export-PFX @pfxParams
