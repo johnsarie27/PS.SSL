@@ -75,7 +75,8 @@ function New-CSR {
             }
 
             # SET TEMPLATE FILE WITH NEW VALUES
-            $ConfigFile = Join-Path -Path $OutputDirectory -ChildPath 'request_template.conf'
+            $random = [System.IO.Path]::GetRandomFileName().Split('.')[0]
+            $ConfigFile = Join-Path -Path $OutputDirectory -ChildPath ('request_template_{0}.conf' -f $random)
             $request | Set-Content -Path $ConfigFile
         }
     }
