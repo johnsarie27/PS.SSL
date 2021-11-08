@@ -54,7 +54,8 @@ function New-CSR {
     )
     Begin {
         # GET OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory }
+        if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory | Out-Null }
+        Write-Verbose -Message ('Creating new folder named: {0}' -f (Split-Path -Path $OutputDirectory -Leaf))
 
         # SET PARAMETERS FOR MANUAL TEMPALTE GENERATION
         if ($PSCmdlet.ParameterSetName -EQ '__manual') {
@@ -80,8 +81,9 @@ function New-CSR {
     }
     End {
         # SET FILE NAME
-        $selectPattern = $ConfigFile | Select-String -Pattern '^CN = (.+)$'
+        $selectPattern = Get-Content -Path $ConfigFile | Select-String -Pattern '^CN = (.+)$'
         $fileName = $selectPattern.Matches.Groups[1].Value
+        Write-Verbose -Message ('New file name: {0}' -f $fileName)
 
         # SET OPENSSL PARAMETERS
         # openssl req -new -out company_san.csr -newkey rsa:2048 -nodes -sha256 -keyout company_san.key -config req.conf
