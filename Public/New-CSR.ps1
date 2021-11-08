@@ -16,8 +16,6 @@ function New-CSR {
         Subject Alternative Name (SAN) 2
     .PARAMETER SAN3
         Subject Alternative Name (SAN) 3
-    .PARAMETER KeepConfig
-        Preserve CSR configuration template
     .INPUTS
         None.
     .OUTPUTS
@@ -52,10 +50,7 @@ function New-CSR {
 
         [Parameter(ParameterSetName = '__manual', HelpMessage = 'Subject Alternative Name (SAN) 3')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN3, # 'company.net'
-
-        [Parameter(ParameterSetName = '__manual', HelpMessage = 'Preserve CSR configuration template')]
-        [switch] $KeepConfig
+        [string] $SAN3 # 'company.net'
     )
     Begin {
         # GET OUTPUT DIRECTORY
@@ -85,8 +80,8 @@ function New-CSR {
     }
     End {
         # SET FILE NAME
-        $fileName = $ConfigFile | Select-String -Pattern '^CN = (.+)$'
-        $fileName = $certName.Matches.Groups[1].Value
+        $selectPattern = $ConfigFile | Select-String -Pattern '^CN = (.+)$'
+        $fileName = $selectPattern.Matches.Groups[1].Value
 
         # SET OPENSSL PARAMETERS
         # openssl req -new -out company_san.csr -newkey rsa:2048 -nodes -sha256 -keyout company_san.key -config req.conf
@@ -107,8 +102,5 @@ function New-CSR {
         $proc = Start-Process @sslParams
 
         if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode) }
-
-        # REMOVE TEMPLATE
-        if (!$PSBoundParameters.ContainsKey('KeepConfig')) { Remove-Item -Path $ConfigFile -Confirm:$false }
     }
 }
