@@ -6,8 +6,7 @@
 ============================================================================= #>
 
 # SET VARIABLS
-$version = '0.1.0'
-$moduleUrl = "https://github.com/johnsarie27/PS.SSL/archive/refs/tags/v$version.zip"
+$moduleUrl = 'https://github.com/johnsarie27/PS.SSL/archive/refs/heads/main.zip'
 $moduleFolder = "$HOME\Documents\PowerShell\Modules"
 
 # STEP 1: INSTALL OPENSSL
@@ -20,7 +19,7 @@ Invoke-WebRequest -Uri $moduleUrl -OutFile "$HOME\Desktop\PS.SSL.zip"
 Expand-Archive -Path "$HOME\Desktop\PS.SSL.zip" -DestinationPath $moduleFolder
 
 # STEP 4: GET VERSION AND RENAME MODULE FOLDER
-Rename-Item -Path "$moduleFolder\PS.SSL-$version" -NewName "PS.SSL"
+Rename-Item -Path "$moduleFolder\PS.SSL-main" -NewName "PS.SSL"
 
 # STEP 5: UNBLOCK NEW MODULE
 Get-ChildItem -Path "$moduleFolder\PS.SSL" -Recurse | Unblock-File
