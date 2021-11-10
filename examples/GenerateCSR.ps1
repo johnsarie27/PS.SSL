@@ -1,6 +1,4 @@
 <# =============================================================================
-.SYNOPSIS
-    Create, validate, and complete the CSR process
 .DESCRIPTION
     Create, validate, and complete the CSR process
 .NOTES
@@ -19,6 +17,8 @@ New-CSR -OutputDirectory $root -ConfigFile "$root\example_template.conf"
 # VERIFY UNSIGNED CSR ATTRIBUTES
 Confirm-CSR -CSR "$root\www.company.com.csr"
 
+# AT THIS POINT THE CSR CAN BE SENT TO A PUBLIC CERTIFICATE AUTHORITY FOR SIGNING
+# DO NOT PROCEEED WITH THE BELOW STEPS UNTIL A SIGNED CSR HAS BEEN RETURNED
 
 # VERIFY SIGNED CERTIFICATE
 Get-CertificateDetails -Path "$root\digicert\<SIGNED_CSR>.crt"
