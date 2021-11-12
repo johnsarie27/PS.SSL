@@ -32,6 +32,7 @@ Get-CertificateDetails -Path "$root\digicert\TrustedRoot.crt"
 # COMPLETE PROCESS BY EXPORTING PFX/P12
 $pfxParams = @{
     OutputDirectory = "$root\completed"
+    Password        = Read-Host -AsSecureString -Prompt 'Password'
     SignedCSR       = "$root\digicert\<CERTIFICATE>.crt"
     Key             = "$root\<PRIVATE_KEY>.key"
     RootCA          = "$root\digicert\TrustedRoot.crt"
