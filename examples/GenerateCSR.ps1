@@ -39,3 +39,6 @@ $pfxParams = @{
     IntermediateCA  = "$root\digicert\DigiCertCA.crt"
 }
 Export-PFX @pfxParams
+
+# TEST PASSWORD
+Get-PfxCertificate -FilePath $pfx -Password (Read-Host -AsSecureString -Prompt 'Password')
