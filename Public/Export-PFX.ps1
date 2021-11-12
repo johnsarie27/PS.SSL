@@ -6,6 +6,8 @@ function Export-PFX {
         Export PFX file from completed CSR, private key, and certificate trust chain
     .PARAMETER OutputDirectory
         Output directory for new PFX file
+    .PARAMETER Password
+        Password used to protect exported PFX file
     .PARAMETER Key
         Path to private key file
     .PARAMETER SignedCSR
@@ -29,6 +31,10 @@ function Export-PFX {
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
         [string] $OutputDirectory = "$HOME\Desktop",
+
+        [Parameter(Mandatory, HelpMessage = 'Password used to protect exported PFX file')]
+        [ValidateNotNullOrEmpty()]
+        [System.Security.SecureString] $Password,
 
         [Parameter(Mandatory, HelpMessage = 'Path to private key file')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.key' })]
@@ -62,6 +68,9 @@ function Export-PFX {
         else {
             $chain = $RootCA
         }
+
+        # CREATE CREDENTIAL OBJECT WITH PASSWORD
+        $creds = [System.Management.Automation.PSCredential]::new('UserName', $Password)
     }
     End {
         # SET OPENSSL PARAMETERS
@@ -74,6 +83,7 @@ function Export-PFX {
                 '-inkey {0}' -f $Key
                 '-in {0}' -f $SignedCSR
                 '-certfile {0}' -f $chain
+                '-passout pass:{0}' -f $creds.GetNetworkCredential().Password
             )
             Wait         = $true
             NoNewWindow  = $true
