@@ -39,8 +39,10 @@ function ConvertTo-Text {
         Get-PfxCertificate -FilePath $PFX -Password $Password -ErrorAction Stop | Out-Null
 
         # GET OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory }
-        Write-Verbose -Message ('Created new folder: {0}' -f $OutputDirectory)
+        if (-not (Test-Path -Path $OutputDirectory)) {
+            New-Item -Path $OutputDirectory -ItemType Directory
+            Write-Verbose -Message ('Created new folder: {0}' -f $OutputDirectory)
+        }
 
         # SET OUTPUT FILE NAME
         $name = '{0}.txt' -f (Split-Path -Path $PFX -LeafBase)
