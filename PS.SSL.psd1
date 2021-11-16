@@ -9,7 +9,7 @@
     RootModule = 'PS.SSL.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.0.3'
+    ModuleVersion     = '0.0.4'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -69,8 +69,9 @@
     FunctionsToExport = @(
         'Confirm-CSR'
         'ConvertTo-Text'
-        'Get-CertificateDetails'
         'Export-PFX'
+        'Get-CertificateDetails'
+        'Get-RemoteSSLCertificate'
         'New-CSR'
     )
 
