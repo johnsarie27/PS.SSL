@@ -33,36 +33,36 @@ function Get-RemoteSSLCertificate {
 
         foreach ($cn in $ComputerName) {
 
-            $Certificate = $null
-            $TcpClient = New-Object -TypeName System.Net.Sockets.TcpClient
+            $certificate = $null
+            $tcpClient = New-Object -TypeName System.Net.Sockets.TcpClient
 
             try {
 
-                $TcpClient.Connect($ComputerName, $Port)
-                $TcpStream = $TcpClient.GetStream()
+                $tcpClient.Connect($ComputerName, $Port)
+                $tcpStream = $tcpClient.GetStream()
 
-                $Callback = { param($sender, $cert, $chain, $errors) return $true }
+                $callback = { param($sender, $cert, $chain, $errors) return $true }
 
-                $SslStream = New-Object -TypeName System.Net.Security.SslStream -ArgumentList @($TcpStream, $true, $Callback)
+                $sslStream = New-Object -TypeName System.Net.Security.SslStream -ArgumentList @($tcpStream, $true, $callback)
 
                 try {
-                    $SslStream.AuthenticateAsClient('')
-                    $Certificate = $SslStream.RemoteCertificate
+                    $sslStream.AuthenticateAsClient('')
+                    $certificate = $sslStream.RemoteCertificate
                 }
                 finally {
-                    $SslStream.Dispose()
+                    $sslStream.Dispose()
                 }
             }
             finally {
-                $TcpClient.Dispose()
+                $tcpClient.Dispose()
             }
 
-            if ($Certificate) {
-                if ($Certificate -isnot [System.Security.Cryptography.X509Certificates.X509Certificate2]) {
-                    $Certificate = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $Certificate
+            if ($certificate) {
+                if ($certificate -isnot [System.Security.Cryptography.X509Certificates.X509Certificate2]) {
+                    $certificate = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $certificate
                 }
 
-                Write-Output -InputObject $Certificate
+                Write-Output -InputObject $certificate
             }
         }
     }
