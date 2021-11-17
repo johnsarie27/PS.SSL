@@ -38,7 +38,7 @@ function Get-RemoteSSLCertificate {
 
             try {
 
-                $tcpClient.Connect($ComputerName, $Port)
+                $tcpClient.Connect($cn, $Port)
                 $tcpStream = $tcpClient.GetStream()
 
                 $callback = { param($sender, $cert, $chain, $errors) return $true }
