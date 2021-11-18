@@ -18,6 +18,7 @@ function Get-RemoteSSLCertificate {
     .NOTES
         General notes
         Original code from: https://gist.github.com/jstangroome/5945820
+        https://docs.microsoft.com/en-us/archive/blogs/parallel_universe_-_ms_tech_blog/reading-a-certificate-off-a-remote-ssl-server-for-troubleshooting-with-powershell
     ========================================================================= #>
     [CmdletBinding()]
     Param(
