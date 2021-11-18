@@ -46,7 +46,8 @@ function Get-RemoteSSLCertificate {
                 $sslStream = New-Object -TypeName System.Net.Security.SslStream -ArgumentList @($tcpStream, $true, $callback)
 
                 try {
-                    $sslStream.AuthenticateAsClient('')
+                    #$sslStream.AuthenticateAsClient('')
+                    $sslStream.AuthenticateAsClient($cn)
                     $certificate = $sslStream.RemoteCertificate
                 }
                 finally {
