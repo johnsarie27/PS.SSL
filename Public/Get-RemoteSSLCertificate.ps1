@@ -5,7 +5,7 @@ function Get-RemoteSSLCertificate {
     .DESCRIPTION
         Get remote SSL certificate
     .PARAMETER ComputerName
-        Target computer or host
+        Target Computer System
     .PARAMETER Port
         TCP Port
     .INPUTS
@@ -22,7 +22,7 @@ function Get-RemoteSSLCertificate {
     ========================================================================= #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Target host')]
+        [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Target System')]
         [ValidateNotNullOrEmpty()]
         [string[]] $ComputerName,
 
