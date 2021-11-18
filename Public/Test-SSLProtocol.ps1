@@ -19,6 +19,7 @@ function Test-SSLProtocol {
         General notes
         Original code from:
         https://dscottraynsford.wordpress.com/2016/12/24/test-website-ssl-certificates-continuously-with-powershell-and-pester/
+        https://www.sysadmins.lv/blog-en/test-web-server-ssltls-protocol-support-with-powershell.aspx
     ========================================================================= #>
     [CmdletBinding()]
     Param(
@@ -39,6 +40,8 @@ function Test-SSLProtocol {
             ComputerName       = $ComputerName
             Port               = $Port
             KeyLength          = $null
+            KeyExchange        = $null
+            HashAlgorithm      = $null
             SignatureAlgorithm = $null
         }
 
@@ -52,15 +55,18 @@ function Test-SSLProtocol {
                 $sslStream = New-Object System.Net.Security.SslStream($netStream, $true)
                 $sslStream.AuthenticateAsClient($ComputerName, $null, $pn, $false )
                 $remoteCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2] $sslStream.RemoteCertificate
-                $protocolStatus["KeyLength"] = $remoteCertificate.PublicKey.Key.KeySize
-                $protocolStatus["SignatureAlgorithm"] = $remoteCertificate.SignatureAlgorithm.FriendlyName
-                $protocolStatus["Certificate"] = $remoteCertificate
+                $protocolStatus['KeyLength'] = $remoteCertificate.PublicKey.Key.KeySize
+                $protocolStatus['SignatureAlgorithm'] = $remoteCertificate.SignatureAlgorithm.FriendlyName
+                $protocolStatus['KeyExchange'] = $sslStream.KeyExchangeAlgorithm
+                $protocolStatus['HashAlgorithm'] = $sslStream.HashAlgorithm
+                $protocolStatus['Certificate'] = $remoteCertificate
                 $protocolStatus.Add($pn, $true)
             }
             catch {
                 $protocolStatus.Add($pn, $false)
             }
             finally {
+                $socket.Close()
                 $sslStream.Close()
             }
         }
