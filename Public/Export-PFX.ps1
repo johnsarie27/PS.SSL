@@ -44,7 +44,7 @@ function Export-PFX {
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
         [string] $SignedCSR,
 
-        [Parameter(Mandatory, HelpMessage = 'Path to root CA public certificate')]
+        [Parameter(HelpMessage = 'Path to root CA public certificate')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
         [string] $RootCA,
 
@@ -65,7 +65,7 @@ function Export-PFX {
             Get-Content -Path $IntermediateCA | Set-Content -Path $chain
             Get-Content -Path $RootCA | Add-Content -Path $chain
         }
-        else {
+        elseif ($PSBoundParameters.ContainsKey('RootCA')) {
             $chain = $RootCA
         }
 
@@ -82,13 +82,14 @@ function Export-PFX {
                 '-out {0}' -f $pfxPath
                 '-inkey {0}' -f $Key
                 '-in {0}' -f $SignedCSR
-                '-certfile {0}' -f $chain
+                #'-certfile {0}' -f $chain
                 '-passout pass:{0}' -f $creds.GetNetworkCredential().Password
             )
             Wait         = $true
             NoNewWindow  = $true
             PassThru     = $true
         }
+        if ($chain) { $sslParams.ArgumentList += '-certfile {0}' -f $chain }
         $proc = Start-Process @sslParams
 
         if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
