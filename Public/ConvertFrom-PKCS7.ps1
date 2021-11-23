@@ -1,20 +1,20 @@
 function ConvertFrom-PKCS7 {
     <# =========================================================================
     .SYNOPSIS
-        Convert
+        Convert PKCS7 formatted certificate
     .DESCRIPTION
-        Convert
+        Convert PKCS7 formatted certificate to non-PKCS7 format
     .PARAMETER Path
         Path to PKCS7 formatted certificate file
     .PARAMETER OutputDirectory
         Output directory path
     .INPUTS
-        None.
+        System.String.
     .OUTPUTS
         None.
     .EXAMPLE
         PS C:\> ConvertFrom-PKCS7 -Path .\myCert.cer -OutputDirectory .\newFolder
-        Converts a PKCS7 formatted certificate to standard format
+        Converts a PKCS7 formatted certificate to non-PKCS7 format with .crt extension
     .NOTES
         General notes
     ========================================================================= #>
