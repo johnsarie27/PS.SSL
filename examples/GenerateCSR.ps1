@@ -17,6 +17,7 @@ New-CSR -OutputDirectory $root -ConfigFile "$root\example_template.conf"
 # VERIFY UNSIGNED CSR ATTRIBUTES
 Confirm-CSR -CSR "$root\www.company.com.csr"
 
+# ==============================================================================
 # AT THIS POINT THE CSR CAN BE SENT TO A PUBLIC CERTIFICATE AUTHORITY FOR SIGNING
 # DO NOT PROCEEED WITH THE BELOW STEPS UNTIL A SIGNED CSR HAS BEEN RETURNED
 
@@ -37,6 +38,26 @@ $pfxParams = @{
     Key             = "$root\<PRIVATE_KEY>.key"
     RootCA          = "$root\digicert\TrustedRoot.crt"
     IntermediateCA  = "$root\digicert\DigiCertCA.crt"
+}
+Export-PFX @pfxParams
+
+# TEST PASSWORD
+Get-PfxCertificate -FilePath $pfx -Password (Read-Host -AsSecureString -Prompt 'Password')
+
+# ==============================================================================
+# IF YOU RECEIVE A P7B (OR OTHER PKCS7 FORMATTED FILE) CONTAINING THE SIGNED
+# CSR AND OTHER INTERMEDIATE/ROOT CERTIFICATES, USE THE CMDLET BELOW TO
+# CONVERT IT AND THEN EXPORT THE PFX
+
+# CONVERT PKCS7
+ConvertFrom-PKCS7 -Path "$root\<CERTIFICATE>.pem" -OutputDirectory $root
+
+# COMPLETE PROCESS BY EXPORTING PFX/P12
+$pfxParams = @{
+    OutputDirectory = "$root\completed"
+    Password        = Read-Host -AsSecureString -Prompt 'Password'
+    SignedCSR       = "$root\digicert\<CERTIFICATE>.crt"
+    Key             = "$root\<PRIVATE_KEY>.key"
 }
 Export-PFX @pfxParams
 
