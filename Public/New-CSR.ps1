@@ -88,6 +88,7 @@ function New-CSR {
 
         # SET OPENSSL PARAMETERS
         # openssl req -new -out company_san.csr -newkey rsa:2048 -nodes -sha256 -keyout company_san.key -config req.conf
+        # openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
         $sslParams = @{
             FilePath     = 'openssl.exe'
             ArgumentList = @(
