@@ -8,6 +8,16 @@ function New-CSR {
         Output directory for CSR and key file
     .PARAMETER ConfigFile
         Path to configuration template file
+    .PARAMETER Country
+        Country Name (C)
+    .PARAMETER State
+        State or Province Name (ST)
+    .PARAMETER Locality
+        Locality Name (L)
+    .PARAMETER Organization
+        Organization Name (O)
+    .PARAMETER OrganizationalUnit
+        Organizational Unit Name (OU)
     .PARAMETER CN
         Common Name (CN)
     .PARAMETER SAN1
@@ -21,83 +31,116 @@ function New-CSR {
     .OUTPUTS
         System.Object.
     .EXAMPLE
-        PS C:\> <example usage>
-        Explanation of what the example does
+        PS C:\> New-CSR -CommonName www.myDomain.com
+        Creates a new CSR and private key for www.myDomain.com
     .NOTES
         General notes
+        Example commands
+        openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
+        openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
     ========================================================================= #>
-    [CmdletBinding(DefaultParameterSetName = '__template')]
+    [CmdletBinding(DefaultParameterSetName = '__conf')]
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
         [string] $OutputDirectory = "$HOME\Desktop",
 
-        [Parameter(Mandatory, ParameterSetName = '__template', HelpMessage = 'Path to configuration template')]
+        [Parameter(Mandatory, ParameterSetName = '__conf', HelpMessage = 'Path to configuration template')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.conf' })]
         [string] $ConfigFile,
 
-        [Parameter(Mandatory, ParameterSetName = '__manual', HelpMessage = 'Common Name (CN)')]
-        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $CN, # 'www.company.com'
+        [Parameter(ParameterSetName = '__input', HelpMessage = 'Country Name (C)')]
+        [Alias('C')]
+        [ValidatePattern('^[A-Z]{2}$')]
+        [string] $Country,
 
-        [Parameter(ParameterSetName = '__manual', HelpMessage = 'Subject Alternative Name (SAN) 1')]
-        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN1, # 'company.com'
+        [Parameter(ParameterSetName = '__input', HelpMessage = 'State or Province Name (ST)')]
+        [Alias('ST')]
+        [ValidatePattern('^[\w-]+$')]
+        [string] $State,
 
-        [Parameter(ParameterSetName = '__manual', HelpMessage = 'Subject Alternative Name (SAN) 2')]
-        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN2, # 'www.company.net'
+        [Parameter(ParameterSetName = '__input', HelpMessage = 'Locality Name (L)')]
+        [Alias('L')]
+        [ValidatePattern('^[\w-]+$')]
+        [string] $Locality,
 
-        [Parameter(ParameterSetName = '__manual', HelpMessage = 'Subject Alternative Name (SAN) 3')]
+        [Parameter(ParameterSetName = '__input', HelpMessage = 'Organization Name (O)')]
+        [Alias('O')]
+        [ValidatePattern('^[\w\.-]+$')]
+        [string] $Organization,
+
+        [Parameter(ParameterSetName = '__input', HelpMessage = 'Organizational Unit Name (OU)')]
+        [Alias('OU')]
+        [ValidatePattern('^[\w\.-]+$')]
+        [string] $OrganizationalUnit,
+
+        [Parameter(Mandatory, ParameterSetName = '__input', HelpMessage = 'Common Name (CN)')]
+        [Alias('CN')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN3 # 'company.net'
+        [string] $CommonName,
+
+        [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 1')]
+        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
+        [string] $SAN1,
+
+        [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 2')]
+        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
+        [string] $SAN2,
+
+        [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 3')]
+        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
+        [string] $SAN3
     )
     Begin {
         # GET OUTPUT DIRECTORY
         if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory | Out-Null }
         Write-Verbose -Message ('Creating new folder named: {0}' -f (Split-Path -Path $OutputDirectory -Leaf))
 
-        # SET PARAMETERS FOR MANUAL TEMPALTE GENERATION
-        if ($PSCmdlet.ParameterSetName -EQ '__manual') {
+        if ($PSCmdlet.ParameterSetName -eq '__input') {
             # GET TEMPLATE
-            $request = [System.Collections.ArrayList]::new((Get-Content -Path $CSR_Template))
+            $template = [System.Collections.ArrayList]::new($CSR_Template)
 
             # SET REPLACEMENT TOKENS
-            $tokenList = @{ CN = $CN }
-            if ($PSBoundParameters.ContainsKey('SAN1')) { $tokenList.Add('SAN1', $SAN1) } else { $request.Remove('DNS.2 = #SAN1#') }
-            if ($PSBoundParameters.ContainsKey('SAN2')) { $tokenList.Add('SAN2', $SAN2) } else { $request.Remove('DNS.3 = #SAN2#') }
-            if ($PSBoundParameters.ContainsKey('SAN3')) { $tokenList.Add('SAN3', $SAN3) } else { $request.Remove('DNS.4 = #SAN3#') }
+            $tokenList = @{ CN = $CommonName }
+            if ($PSBoundParameters.ContainsKey('Country')) { $tokenList.Add('C', $Country) } else { $template.Remove('C = #C#') }
+            if ($PSBoundParameters.ContainsKey('State')) { $tokenList.Add('ST', $State) } else { $template.Remove('ST = #ST#') }
+            if ($PSBoundParameters.ContainsKey('Location')) { $tokenList.Add('L', $Location) } else { $template.Remove('L = #L#') }
+            if ($PSBoundParameters.ContainsKey('Organization')) { $tokenList.Add('O', $Organization) } else { $template.Remove('O = #O#') }
+            if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
+            if ($PSBoundParameters.ContainsKey('SAN1')) { $tokenList.Add('SAN1', $SAN1) } else { $template.Remove('DNS.2 = #SAN1#') }
+            if ($PSBoundParameters.ContainsKey('SAN2')) { $tokenList.Add('SAN2', $SAN2) } else { $template.Remove('DNS.3 = #SAN2#') }
+            if ($PSBoundParameters.ContainsKey('SAN3')) { $tokenList.Add('SAN3', $SAN3) } else { $template.Remove('DNS.4 = #SAN3#') }
 
             # REPLACE TOKENS
             foreach ( $token in $tokenList.GetEnumerator() ) {
                 $pattern = '#{0}#' -f $token.key
-                $request = $request -replace $pattern, $token.Value
+                $template = $template -replace $pattern, $token.Value
             }
 
             # SET TEMPLATE FILE WITH NEW VALUES
             $random = [System.IO.Path]::GetRandomFileName().Split('.')[0]
-            $ConfigFile = Join-Path -Path $OutputDirectory -ChildPath ('request_template_{0}.conf' -f $random)
-            $request | Set-Content -Path $ConfigFile
+            $configPath = Join-Path -Path $OutputDirectory -ChildPath ('csr_template_{0}.conf' -f $random)
+            $template | Set-Content -Path $configPath
+        }
+        else {
+            $configPath = $ConfigFile
         }
     }
     End {
         # SET FILE NAME
-        $selectPattern = Get-Content -Path $ConfigFile | Select-String -Pattern '^CN = (.+)$'
+        $selectPattern = Get-Content -Path $configPath | Select-String -Pattern '^CN = (.+)$'
         $fileName = $selectPattern.Matches.Groups[1].Value
         Write-Verbose -Message ('New file name: {0}' -f $fileName)
 
         # SET OPENSSL PARAMETERS
-        # openssl req -new -out company_san.csr -newkey rsa:2048 -nodes -sha256 -keyout company_san.key -config req.conf
-        # openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
+        # openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
         $sslParams = @{
-            FilePath     = 'openssl.exe'
+            FilePath     = 'openssl' # .exe
             ArgumentList = @(
-                'req -new'
-                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))
-                '-newkey rsa:2048'
-                '-nodes -sha256'
+                'req -new -newkey rsa:2048 -nodes'
+                '-config {0}' -f $configPath
                 '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
-                '-config {0}' -f $ConfigFile
+                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))
             )
             Wait         = $true
             NoNewWindow  = $true

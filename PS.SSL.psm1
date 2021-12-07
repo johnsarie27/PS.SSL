@@ -10,7 +10,28 @@ foreach ( $directory in @('Public', 'Private') ) {
 }
 
 # VARIABLES
-$CSR_Template = "$PSScriptRoot\Private\req.conf"
+$CSR_Template = @(
+    '[req]',
+    'distinguished_name = req_distinguished_name',
+    'req_extensions = v3_req',
+    'prompt = no',
+    '[req_distinguished_name]',
+    'C = #C#',
+    'ST = #ST#',
+    'L = #L#',
+    'O = #O#',
+    'OU = #OU#',
+    'CN = #CN#',
+    '[v3_req]',
+    'keyUsage = keyEncipherment, dataEncipherment',
+    'extendedKeyUsage = serverAuth',
+    'subjectAltName = @alt_names',
+    '[alt_names]',
+    'DNS.1 = #CN#',
+    'DNS.2 = #SAN1#',
+    'DNS.3 = #SAN2#',
+    'DNS.4 = #SAN3#'
+)
 
 # EXPORT MEMBERS
 # THESE ARE SPECIFIED IN THE MODULE MANIFEST AND THEREFORE DON'T NEED TO BE LISTED HERE
