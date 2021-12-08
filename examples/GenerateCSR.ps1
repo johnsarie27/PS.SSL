@@ -36,20 +36,20 @@ $csrParams = @{
 New-CSR @csrParams
 
 # VERIFY UNSIGNED CSR ATTRIBUTES
-Confirm-CSR -CSR "$root\www.company.com.csr"
+Get-CSRData -CSR "$root\www.company.com.csr"
 
 # ==============================================================================
 # AT THIS POINT THE CSR CAN BE SENT TO A PUBLIC CERTIFICATE AUTHORITY FOR SIGNING
 # DO NOT PROCEEED WITH THE BELOW STEPS UNTIL A SIGNED CSR HAS BEEN RETURNED
 
 # VERIFY SIGNED CERTIFICATE
-Get-CertificateDetails -Path "$root\digicert\<SIGNED_CSR>.crt"
+Get-CertificateData -Path "$root\digicert\<SIGNED_CSR>.crt"
 
 # VERIFY INTERMEDIATE CERTIFICATE
-Get-CertificateDetails -Path "$root\digicert\DigiCertCA.crt"
+Get-CertificateData -Path "$root\digicert\DigiCertCA.crt"
 
 # VERIFY ROOT CERTIFICATE
-Get-CertificateDetails -Path "$root\digicert\TrustedRoot.crt"
+Get-CertificateData -Path "$root\digicert\TrustedRoot.crt"
 
 # COMPLETE PROCESS BY EXPORTING PFX/P12
 $pfxParams = @{

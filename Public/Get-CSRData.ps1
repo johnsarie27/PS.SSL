@@ -1,11 +1,11 @@
-function Get-CertificateDetails {
+function Get-CSRData {
     <# =========================================================================
     .SYNOPSIS
-        Get x509 certificate details
+        Confirm CSR
     .DESCRIPTION
-        Get x509 certificate details
-    .PARAMETER Path
-        Path to x509 certificate file
+        Confirm/validate details of certificate signing request (CSR)
+    .PARAMETER CSR
+        Path to certificate signing request (CSR)
     .INPUTS
         System.String.
     .OUTPUTS
@@ -18,18 +18,18 @@ function Get-CertificateDetails {
     ========================================================================= #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to x509 certificate file')]
-        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.crt", "*.cer", "*.pem" })]
-        [string] $Path
+        [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to CA-signed certificate request')]
+        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.csr" })]
+        [string] $CSR
     )
     Process {
-        # VERIFY SIGNED CERTIFICATE
-        # openssl x509 -text -noout -in <Public_Key_Signed>.crt
+        # VERIFY UNSIGNED CSR
+        # openssl req -text -noout -verify -in company_san.csr
         $sslParams = @{
             FilePath     = 'openssl' # .exe
             ArgumentList = @(
-                'x509 -text -noout'
-                '-in {0}' -f $Path
+                'req -text -noout -verify'
+                '-in {0}' -f $CSR
             )
             Wait         = $true
             NoNewWindow  = $true
