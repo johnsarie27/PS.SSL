@@ -58,22 +58,22 @@ function New-CSR {
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'State or Province Name (ST)')]
         [Alias('ST')]
-        [ValidatePattern('^[\w-]+$')]
+        [ValidatePattern('^[\w\s-]+$')]
         [string] $State,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Locality Name (L)')]
         [Alias('L')]
-        [ValidatePattern('^[\w-]+$')]
+        [ValidatePattern('^[\w\s-]+$')]
         [string] $Locality,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Organization Name (O)')]
         [Alias('O')]
-        [ValidatePattern('^[\w\.-]+$')]
+        [ValidatePattern('^[\w\.\s-]+$')]
         [string] $Organization,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Organizational Unit Name (OU)')]
         [Alias('OU')]
-        [ValidatePattern('^[\w\.-]+$')]
+        [ValidatePattern('^[\w\.\s-]+$')]
         [string] $OrganizationalUnit,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Email Address')]
