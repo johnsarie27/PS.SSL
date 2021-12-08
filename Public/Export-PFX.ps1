@@ -76,7 +76,7 @@ function Export-PFX {
         # SET OPENSSL PARAMETERS
         # openssl pkcs12 -export -out myDomain.com.pfx -inkey myDomain.com.key -in myDomain.com.crt -certfile CertChain.crt
         $sslParams = @{
-            FilePath     = 'openssl.exe'
+            FilePath     = 'openssl' # .exe
             ArgumentList = @(
                 'pkcs12 -export'
                 '-out {0}' -f $pfxPath

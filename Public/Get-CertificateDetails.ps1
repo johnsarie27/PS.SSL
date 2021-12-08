@@ -26,7 +26,7 @@ function Get-CertificateDetails {
         # VERIFY SIGNED CERTIFICATE
         # openssl x509 -text -noout -in <Public_Key_Signed>.crt
         $sslParams = @{
-            FilePath     = 'openssl.exe'
+            FilePath     = 'openssl' # .exe
             ArgumentList = @(
                 'x509 -text -noout'
                 '-in {0}' -f $Path

@@ -43,7 +43,7 @@ function ConvertFrom-PKCS7 {
         # VERIFY SIGNED CERTIFICATE
         # openssl.exe pkcs7 -in certnew.p7b -print_certs -out $newFile
         $sslParams = @{
-            FilePath     = 'openssl.exe'
+            FilePath     = 'openssl' # .exe
             ArgumentList = @(
                 'pkcs7'
                 '-in {0}' -f $Path

@@ -55,7 +55,7 @@ function ConvertTo-Text {
         # VERIFY SIGNED CERTIFICATE
         # openssl pkcs12 -in <PFX_PATH> -out <FILE.TXT> -nodes
         $sslParams = @{
-            FilePath     = 'openssl.exe'
+            FilePath     = 'openssl' # .exe
             ArgumentList = @(
                 'pkcs12'
                 '-in {0}' -f $PFX

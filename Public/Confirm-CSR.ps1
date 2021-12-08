@@ -26,7 +26,7 @@ function Confirm-CSR {
         # VERIFY UNSIGNED CSR
         # openssl req -text -noout -verify -in company_san.csr
         $sslParams = @{
-            FilePath     = 'openssl.exe'
+            FilePath     = 'openssl' # .exe
             ArgumentList = @(
                 'req -text -noout -verify'
                 '-in {0}' -f $CSR
