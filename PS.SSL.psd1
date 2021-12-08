@@ -9,7 +9,7 @@
     RootModule        = 'PS.SSL.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.0.11'
+    ModuleVersion     = '0.0.12'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -68,7 +68,7 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
         'ConvertFrom-PKCS7'
-        'ConvertTo-Text'
+        'ConvertTo-PEM'
         'Export-PFX'
         'Get-CertificateData'
         'Get-CSRData'

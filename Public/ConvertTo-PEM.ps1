@@ -1,9 +1,9 @@
-function ConvertTo-Text {
+function ConvertTo-PEM {
     <# =========================================================================
     .SYNOPSIS
-        Convert PFX file to plain text
+        Convert PFX file to PEM file
     .DESCRIPTION
-        Convert PFX file to plain text including private key
+        Convert PFX file to PEM file including private key
     .PARAMETER PFX
         Path to PFX file
     .PARAMETER OutputDirectory
@@ -15,22 +15,22 @@ function ConvertTo-Text {
     .OUTPUTS
         None.
     .EXAMPLE
-        PS C:\> ConvertTo-Text -PFX .\myCert.pfx -OutputDirectory .\newFolder -Password $pw
-        Converts myCert.pfx to myCert.txt exposing all certificate details in plain text
+        PS C:\> ConvertTo-PEM -PFX .\myCert.pfx -OutputDirectory .\newFolder -Password $pw
+        Converts myCert.pfx to myCert.pem exposing all certificate details in plain text
     .NOTES
         General notes
     ========================================================================= #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to PFX file')]
-        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.pfx" })]
+        [ValidateScript( { Test-Path -Path $_ -PathType Leaf -Include "*.pfx" })]
         [string] $PFX,
 
-        [Parameter(HelpMessage = 'Output directory for CSR and key file')]
-        [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
+        [Parameter(HelpMessage = 'Output directory for PEM file')]
+        [ValidateScript( { Test-Path -Path (Split-Path -Path $_) -PathType Container })]
         [string] $OutputDirectory = "$HOME\Desktop",
 
-        [Parameter(Mandatory, HelpMessage = 'Password used to protect exported PFX file')]
+        [Parameter(Mandatory, HelpMessage = 'Password to PFX file')]
         [ValidateNotNullOrEmpty()]
         [System.Security.SecureString] $Password
     )
@@ -45,7 +45,7 @@ function ConvertTo-Text {
         }
 
         # SET OUTPUT FILE NAME
-        $name = '{0}.txt' -f (Split-Path -Path $PFX -LeafBase)
+        $name = '{0}.pem' -f (Split-Path -Path $PFX -LeafBase)
         Write-Verbose -Message ('Set filename to: {0}' -f $name)
 
         # CREATE CREDENTIAL OBJECT WITH PASSWORD
