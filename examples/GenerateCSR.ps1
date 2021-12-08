@@ -2,7 +2,7 @@
 # Updated:      2021-12-08
 # Created by:   Justin Johns
 # Filename:     GenerateCSR.ps1
-# Version:      0.0.3
+# Version:      0.0.4
 # ==============================================================================
 
 #Requires -Modules PS.SSL
@@ -20,7 +20,7 @@ Import-Module -Name 'PS.SSL'
 #region NEW CSR FROM INPUTS ====================================================
 # USE THE FOLLOWING TO CREATE THE CSR
 $csrParams = @{
-    OutputDirectory = $root
+    OutputDirectory = "$HOME\Desktop\test\CSR"
     #Country         = 'US'
     #State           = 'California'
     #Locality        = 'Redlands'
