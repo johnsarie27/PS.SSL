@@ -9,7 +9,7 @@
     RootModule = 'PS.SSL.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.0.7'
+    ModuleVersion     = '0.0.8'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()

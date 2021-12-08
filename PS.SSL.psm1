@@ -11,25 +11,28 @@ foreach ( $directory in @('Public', 'Private') ) {
 
 # VARIABLES
 $CSR_Template = @(
-    '[req]',
-    'distinguished_name = req_distinguished_name',
-    'req_extensions = v3_req',
-    'prompt = no',
-    '[req_distinguished_name]',
-    'C = #C#',
-    'ST = #ST#',
-    'L = #L#',
-    'O = #O#',
-    'OU = #OU#',
-    'CN = #CN#',
-    '[v3_req]',
-    'keyUsage = keyEncipherment, dataEncipherment',
-    'extendedKeyUsage = serverAuth',
-    'subjectAltName = @alt_names',
-    '[alt_names]',
-    'DNS.1 = #CN#',
-    'DNS.2 = #SAN1#',
-    'DNS.3 = #SAN2#',
+    '[req]'
+    'distinguished_name = req_distinguished_name'
+    'req_extensions = v3_req'
+    'default_bits = 2048'
+    'default_md = sha256'
+    'prompt = no'
+    '[req_distinguished_name]'
+    'C = #C#'
+    'ST = #ST#'
+    'L = #L#'
+    'O = #O#'
+    'OU = #OU#'
+    'emailAddress="#E#"'
+    'CN = #CN#'
+    '[v3_req]'
+    'keyUsage = keyEncipherment, dataEncipherment'
+    'extendedKeyUsage = serverAuth'
+    'subjectAltName = @alt_names'
+    '[alt_names]'
+    'DNS.1 = #CN#'
+    'DNS.2 = #SAN1#'
+    'DNS.3 = #SAN2#'
     'DNS.4 = #SAN3#'
 )
 

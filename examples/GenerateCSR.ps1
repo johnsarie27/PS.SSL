@@ -12,10 +12,13 @@ Import-Module -Name 'PS.SSL'
 $root = "$HOME\Desktop\test\CSR"
 
 # CREATE EXAMPLE TEMPLATE IN ROOT
-$CSR_Template | Set-Content -Path "$root\example.conf"
+$CSR_Template | Set-Content -Path "$root\template.conf"
+
+# OPEN THE CONFIG FILE AND EDIT THE REQUIRED PROPERTIES
+code "$root\template.conf"
 
 # CREATE NEW PRIVATE KEY AND CERTIFICATE SIGNING REQUEST (CSR)
-New-CSR -OutputDirectory $root -ConfigFile "$root\example_template.conf"
+New-CSR -OutputDirectory $root -ConfigFile "$root\template.conf"
 
 # OR -- USE THE FOLLOWING TO CREATE THE CSR
 $csrParams = @{
