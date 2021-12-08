@@ -1,3 +1,12 @@
+# ==============================================================================
+# Updated:      2021-12-08
+# Created by:   Justin Johns
+# Filename:     GenerateCSR.ps1
+# Version:      0.0.3
+# ==============================================================================
+
+#Requires -Modules PS.SSL
+
 <# =============================================================================
 .DESCRIPTION
     Create, validate, and complete the CSR process
@@ -8,19 +17,8 @@
 # IMPORT MODULE
 Import-Module -Name 'PS.SSL'
 
-# SET DIRECTORY FOR PRIVATE KEY AND CERTIFICATES
-$root = "$HOME\Desktop\test\CSR"
-
-# CREATE EXAMPLE TEMPLATE IN ROOT
-$CSR_Template | Set-Content -Path "$root\template.conf"
-
-# OPEN THE CONFIG FILE AND EDIT THE REQUIRED PROPERTIES
-code "$root\template.conf"
-
-# CREATE NEW PRIVATE KEY AND CERTIFICATE SIGNING REQUEST (CSR)
-New-CSR -OutputDirectory $root -ConfigFile "$root\template.conf"
-
-# OR -- USE THE FOLLOWING TO CREATE THE CSR
+#region NEW CSR FROM INPUTS ====================================================
+# USE THE FOLLOWING TO CREATE THE CSR
 $csrParams = @{
     OutputDirectory = $root
     #Country         = 'US'
@@ -35,10 +33,30 @@ $csrParams = @{
 }
 New-CSR @csrParams
 
+#endregion =====================================================================
+
+
+#region NEW CSR FROM TEMPLATE ==================================================
+# SET DIRECTORY FOR PRIVATE KEY AND CERTIFICATES
+$root = "$HOME\Desktop\test\CSR"
+
+# CREATE EXAMPLE TEMPLATE IN ROOT
+$CSR_Template | Set-Content -Path "$root\template.conf"
+
+# OPEN THE CONFIG FILE AND EDIT THE REQUIRED PROPERTIES
+code "$root\template.conf"
+
+# CREATE NEW PRIVATE KEY AND CERTIFICATE SIGNING REQUEST (CSR)
+New-CSR -OutputDirectory $root -ConfigFile "$root\template.conf"
+
+#endregion =====================================================================
+
+
 # VERIFY UNSIGNED CSR ATTRIBUTES
 Get-CSRData -CSR "$root\www.company.com.csr"
 
-# ==============================================================================
+
+#region GENERATE PFX ===========================================================
 # AT THIS POINT THE CSR CAN BE SENT TO A PUBLIC CERTIFICATE AUTHORITY FOR SIGNING
 # DO NOT PROCEEED WITH THE BELOW STEPS UNTIL A SIGNED CSR HAS BEEN RETURNED
 
@@ -65,7 +83,10 @@ Export-PFX @pfxParams
 # TEST PASSWORD
 Get-PfxCertificate -FilePath $pfx -Password (Read-Host -AsSecureString -Prompt 'Password')
 
-# ==============================================================================
+#endregion =====================================================================
+
+
+#region CONVERT PKCS7 (P7B) TO CRT =============================================
 # IF YOU RECEIVE A P7B (OR OTHER PKCS7 FORMATTED FILE) CONTAINING THE SIGNED
 # CSR AND OTHER INTERMEDIATE/ROOT CERTIFICATES, USE THE CMDLET BELOW TO
 # CONVERT IT AND THEN EXPORT THE PFX
@@ -84,3 +105,5 @@ Export-PFX @pfxParams
 
 # TEST PASSWORD
 Get-PfxCertificate -FilePath $pfx -Password (Read-Host -AsSecureString -Prompt 'Password')
+
+#endregion =====================================================================
