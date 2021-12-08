@@ -10,7 +10,7 @@ foreach ( $directory in @('Public', 'Private') ) {
 }
 
 # VARIABLES
-$CSR_Template = @(
+New-Variable -Name 'CSR_Template' -Option ReadOnly -Value @(
     '[req]'
     'distinguished_name = req_distinguished_name'
     'req_extensions = v3_req'
