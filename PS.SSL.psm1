@@ -36,4 +36,4 @@ $CSR_Template = @(
 # EXPORT MEMBERS
 # THESE ARE SPECIFIED IN THE MODULE MANIFEST AND THEREFORE DON'T NEED TO BE LISTED HERE
 #Export-ModuleMember -Function *
-#Export-ModuleMember -Variable *
+Export-ModuleMember -Variable 'CSR_Template'

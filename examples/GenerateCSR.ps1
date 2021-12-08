@@ -11,8 +11,26 @@ Import-Module -Name 'PS.SSL'
 # SET DIRECTORY FOR PRIVATE KEY AND CERTIFICATES
 $root = "$HOME\Desktop\test\CSR"
 
+# CREATE EXAMPLE TEMPLATE IN ROOT
+$CSR_Template | Set-Content -Path "$root\example.conf"
+
 # CREATE NEW PRIVATE KEY AND CERTIFICATE SIGNING REQUEST (CSR)
 New-CSR -OutputDirectory $root -ConfigFile "$root\example_template.conf"
+
+# OR -- USE THE FOLLOWING TO CREATE THE CSR
+$csrParams = @{
+    OutputDirectory = $root
+    Country         = 'US'
+    State           = 'California'
+    Locality        = 'Redlands'
+    Organization    = 'Esri'
+    #OU              = 'PS'
+    CommonName      = 'www.company.com'
+    SAN1            = 'company.com'
+    SAN2            = 'www.company.org'
+    SAN3            = 'company.org'
+}
+New-CSR @csrParams
 
 # VERIFY UNSIGNED CSR ATTRIBUTES
 Confirm-CSR -CSR "$root\www.company.com.csr"
