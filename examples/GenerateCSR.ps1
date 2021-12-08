@@ -23,15 +23,15 @@ New-CSR -OutputDirectory $root -ConfigFile "$root\template.conf"
 # OR -- USE THE FOLLOWING TO CREATE THE CSR
 $csrParams = @{
     OutputDirectory = $root
-    Country         = 'US'
-    State           = 'California'
-    Locality        = 'Redlands'
-    Organization    = 'Esri'
+    #Country         = 'US'
+    #State           = 'California'
+    #Locality        = 'Redlands'
+    #Organization    = 'Esri'
     #OU              = 'PS'
     CommonName      = 'www.company.com'
     SAN1            = 'company.com'
     SAN2            = 'www.company.org'
-    SAN3            = 'company.org'
+    #SAN3            = 'company.org'
 }
 New-CSR @csrParams
 
