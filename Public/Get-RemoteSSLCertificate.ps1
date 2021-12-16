@@ -13,8 +13,14 @@ function Get-RemoteSSLCertificate {
     .OUTPUTS
         System.Object.
     .EXAMPLE
+        --- Example 1: Get remote SSL certificate ---
         PS C:\> Get-RemoteSSLCertificate -ComputerName "www.microsoft.com"
         Get the SSL certificate for www.microsoft.com
+
+        --- Example 2: Get certificate from multipel sites ---
+        PS C:\> $sites = @('site1.com', 'www.site2.com', 'site3.com', 'www.site4.com')
+        PS C:\> Get-RemoteSSLCertificate -ComputerName $sites | Select-Object NotBefore, NotAfter, Subject
+        The first command creates an array of multiple websites. The second commands tests each site and returns the expiry info
     .NOTES
         General notes
         Original code from: https://gist.github.com/jstangroome/5945820
