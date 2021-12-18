@@ -1,8 +1,8 @@
 # ==============================================================================
-# Updated:      2021-12-08
+# Updated:      2021-12-18
 # Created by:   Justin Johns
 # Filename:     GenerateCSR.ps1
-# Version:      0.0.4
+# Version:      0.0.5
 # ==============================================================================
 
 #Requires -Modules PS.SSL
@@ -80,9 +80,6 @@ $pfxParams = @{
 }
 Export-PFX @pfxParams
 
-# TEST PASSWORD
-Get-PfxCertificate -FilePath $pfx -Password (Read-Host -AsSecureString -Prompt 'Password')
-
 #endregion =====================================================================
 
 
@@ -103,7 +100,8 @@ $pfxParams = @{
 }
 Export-PFX @pfxParams
 
-# TEST PASSWORD
-Get-PfxCertificate -FilePath $pfx -Password (Read-Host -AsSecureString -Prompt 'Password')
-
 #endregion =====================================================================
+
+# TEST PASSWORD
+$pfx = "$root\completed\<FILE_NAME>.pfx"
+Get-PfxCertificate -FilePath $pfx -Password (Read-Host -AsSecureString -Prompt 'Password')
