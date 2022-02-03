@@ -141,6 +141,9 @@ function New-CSR {
 
         # SET OPENSSL PARAMETERS
         # openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
+        # USING THE "-legacy" PARAMETER WILL MAINTAIN COMPATABILITY WITH CERTAIN SERVERS THAT DO NOT YET SUPPORT
+        # THE LATEST CIPHERS OR PROTOCOLS
+        # EXAMPLE> openssl pkcs12 -export -legacy -out example.pfx -inkey example.key -in example.crt
         $sslParams = @{
             FilePath     = 'openssl' # .exe
             ArgumentList = @(
