@@ -137,6 +137,10 @@ function New-CSR {
         # SET FILE NAME
         $selectPattern = Get-Content -Path $configPath | Select-String -Pattern '^CN = (.+)$'
         $fileName = $selectPattern.Matches.Groups[1].Value
+
+        # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
+        if ($fileName -match '\*') { $fileName.Replace('*', 'star') }
+
         Write-Verbose -Message ('New file name: {0}' -f $fileName)
 
         # SET OPENSSL PARAMETERS
