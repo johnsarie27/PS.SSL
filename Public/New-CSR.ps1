@@ -139,7 +139,7 @@ function New-CSR {
         $fileName = $selectPattern.Matches.Groups[1].Value
 
         # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
-        if ($fileName -match '\*') { $fileName.Replace('*', 'star') }
+        if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
 
         Write-Verbose -Message ('New file name: {0}' -f $fileName)
 
