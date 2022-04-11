@@ -1,7 +1,7 @@
 # ==============================================================================
-# Updated:      2021-11-01
-# Created by:   Justin Johns
-# Filename:     PS.SSL.psm1
+# Filename: PS.SSL.psm1
+# Version:  0.1.1 | Updated: 2022-04-11
+# Author:   Justin Johns
 # ==============================================================================
 
 # IMPORT ALL FUNCTIONS
@@ -14,8 +14,9 @@ New-Variable -Name 'CSR_Template' -Option ReadOnly -Value @(
     '[req]'
     'distinguished_name = req_distinguished_name'
     'req_extensions = v3_req'
-    'default_bits = 2048'
+    'default_bits = 4096'
     'default_md = sha256'
+    'encrypt_key = no'
     'prompt = no'
     '[req_distinguished_name]'
     'C = #C#'

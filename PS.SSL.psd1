@@ -9,7 +9,7 @@
     RootModule        = 'PS.SSL.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.1.1'
+    ModuleVersion     = '0.1.2'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -74,6 +74,7 @@
         'Get-CSRData'
         'Get-RemoteSSLCertificate'
         'New-CSR'
+        'New-SelfSignedCertificate'
         'Test-SSLProtocol'
     )
 

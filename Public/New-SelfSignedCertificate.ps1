@@ -1,9 +1,9 @@
-function New-CSR {
+function New-SelfSignedCertificate {
     <# =========================================================================
     .SYNOPSIS
-        Generate new CSR and Private key file
+        Generate new self-signed certificate
     .DESCRIPTION
-        Generate new CSR and Private key file
+        Generate new self-signed certificate with openssl
     .PARAMETER OutputDirectory
         Output directory for CSR and key file
     .PARAMETER ConfigFile
@@ -33,13 +33,15 @@ function New-CSR {
     .OUTPUTS
         System.Object.
     .EXAMPLE
-        PS C:\> New-CSR -CommonName www.myDomain.com
-        Creates a new CSR and private key for www.myDomain.com
+        PS C:\> New-SelfSignedCertificate
+        Explanation of what the example does
     .NOTES
+        Name:      New-SelfSignedCertificate
+        Author:    Justin Johns
+        Version:   0.1.0 | Last Edit: 2022-04-11
+        - <VersionNotes> (or remove this line if no version notes)
+        Comments: <Comment(s)>
         General notes
-        Example commands
-        openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
-        openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
     ========================================================================= #>
     [CmdletBinding(DefaultParameterSetName = '__conf')]
     Param(
@@ -98,6 +100,8 @@ function New-CSR {
         [string] $SAN3
     )
     Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+
         # GET OUTPUT DIRECTORY
         if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory | Out-Null }
         Write-Verbose -Message ('Creating new folder named: {0}' -f (Split-Path -Path $OutputDirectory -Leaf))
@@ -147,14 +151,15 @@ function New-CSR {
         # openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
         # USING THE "-legacy" PARAMETER WILL MAINTAIN COMPATABILITY WITH CERTAIN SERVERS THAT DO NOT YET SUPPORT
         # THE LATEST CIPHERS OR PROTOCOLS
-        # EXAMPLE> openssl pkcs12 -export -legacy -out example.pfx -inkey example.key -in example.crt
+        # EXAMPLE> openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
+        # -newkey rsa:4096 and -sha256 are in the default template
         $sslParams = @{
-            FilePath     = 'openssl' # .exe
+            FilePath     = 'openssl'
             ArgumentList = @(
-                'req -new -nodes'
+                'req -new -x509 -nodes'
                 '-config {0}' -f $configPath
                 '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
-                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))
+                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.pem' -f $fileName))
             )
             Wait         = $true
             NoNewWindow  = $true
