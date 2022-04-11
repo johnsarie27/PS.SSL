@@ -37,7 +37,7 @@ function Export-PFX {
         [System.Security.SecureString] $Password,
 
         [Parameter(Mandatory, HelpMessage = 'Path to private key file')]
-        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.key' })]
+        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.key', '*.pem' })]
         [string] $Key,
 
         [Parameter(Mandatory, HelpMessage = 'Path to CA-signed certificate request')]
