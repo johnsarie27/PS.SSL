@@ -6,6 +6,8 @@ function New-SelfSignedCertificate {
         Generate new self-signed certificate with openssl
     .PARAMETER OutputDirectory
         Output directory for CSR and key file
+    .PARAMETER Days
+        Validity period in days (default is 365)
     .PARAMETER ConfigFile
         Path to configuration template file
     .PARAMETER Country
@@ -47,57 +49,61 @@ function New-SelfSignedCertificate {
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
-        [string] $OutputDirectory = "$HOME\Desktop",
+        [System.String] $OutputDirectory = "$HOME\Desktop",
+
+        [Parameter(HelpMessage = 'Validity period in days (default is 365)')]
+        [ValidateRange(30, 3650)]
+        [System.String] $Days = 365,
 
         [Parameter(Mandatory, ParameterSetName = '__conf', HelpMessage = 'Path to configuration template')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.conf' })]
-        [string] $ConfigFile,
+        [System.String] $ConfigFile,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Country Name (C)')]
         [Alias('C')]
         [ValidatePattern('^[A-Z]{2}$')]
-        [string] $Country,
+        [System.String] $Country,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'State or Province Name (ST)')]
         [Alias('ST')]
         [ValidatePattern('^[\w\s-]+$')]
-        [string] $State,
+        [System.String] $State,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Locality Name (L)')]
         [Alias('L')]
         [ValidatePattern('^[\w\s-]+$')]
-        [string] $Locality,
+        [System.String] $Locality,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Organization Name (O)')]
         [Alias('O')]
         [ValidatePattern('^[\w\.\s-]+$')]
-        [string] $Organization,
+        [System.String] $Organization,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Organizational Unit Name (OU)')]
         [Alias('OU')]
         [ValidatePattern('^[\w\.\s-]+$')]
-        [string] $OrganizationalUnit,
+        [System.String] $OrganizationalUnit,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Email Address')]
         [ValidatePattern('^[\w\.@-]+$')]
-        [string] $Email,
+        [System.String] $Email,
 
         [Parameter(Mandatory, ParameterSetName = '__input', HelpMessage = 'Common Name (CN)')]
         [Alias('CN')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $CommonName,
+        [System.String] $CommonName,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 1')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN1,
+        [System.String] $SAN1,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 2')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN2,
+        [System.String] $SAN2,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 3')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN3
+        [System.String] $SAN3
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
@@ -117,7 +123,7 @@ function New-SelfSignedCertificate {
             if ($PSBoundParameters.ContainsKey('Locality')) { $tokenList.Add('L', $Locality) } else { $template.Remove('L = #L#') }
             if ($PSBoundParameters.ContainsKey('Organization')) { $tokenList.Add('O', $Organization) } else { $template.Remove('O = #O#') }
             if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
-            if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress="#E#"') }
+            if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress = "#E#"') }
             if ($PSBoundParameters.ContainsKey('SAN1')) { $tokenList.Add('SAN1', $SAN1) } else { $template.Remove('DNS.2 = #SAN1#') }
             if ($PSBoundParameters.ContainsKey('SAN2')) { $tokenList.Add('SAN2', $SAN2) } else { $template.Remove('DNS.3 = #SAN2#') }
             if ($PSBoundParameters.ContainsKey('SAN3')) { $tokenList.Add('SAN3', $SAN3) } else { $template.Remove('DNS.4 = #SAN3#') }
@@ -156,7 +162,7 @@ function New-SelfSignedCertificate {
         $sslParams = @{
             FilePath     = 'openssl'
             ArgumentList = @(
-                'req -new -x509 -nodes'
+                'req -new -x509 -nodes -days {0}' -f $Days
                 '-config {0}' -f $configPath
                 '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
                 '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.pem' -f $fileName))
