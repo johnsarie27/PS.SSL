@@ -90,7 +90,7 @@ function New-SelfSignedCertificate {
 
         [Parameter(Mandatory, ParameterSetName = '__input', HelpMessage = 'Common Name (CN)')]
         [Alias('CN')]
-        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
+        [ValidatePattern('^[\w\.-]+\.(com|org|gov|internal|local)$')]
         [System.String] $CommonName,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 1')]
