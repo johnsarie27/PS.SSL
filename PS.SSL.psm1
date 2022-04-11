@@ -24,7 +24,7 @@ New-Variable -Name 'CSR_Template' -Option ReadOnly -Value @(
     'L = #L#'
     'O = #O#'
     'OU = #OU#'
-    'emailAddress="#E#"'
+    'emailAddress = "#E#"'
     'CN = #CN#'
     '[v3_req]'
     'keyUsage = keyEncipherment, dataEncipherment'
