@@ -40,8 +40,8 @@ function New-SelfSignedCertificate {
     .NOTES
         Name:      New-SelfSignedCertificate
         Author:    Justin Johns
-        Version:   0.1.0 | Last Edit: 2022-04-11
-        - <VersionNotes> (or remove this line if no version notes)
+        Version:   0.1.1 | Last Edit: 2022-04-13
+        - Renamed output template file
         Comments: <Comment(s)>
         General notes
     ========================================================================= #>
