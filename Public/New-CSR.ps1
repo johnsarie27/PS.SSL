@@ -6,6 +6,8 @@ function New-CSR {
         Generate new CSR and Private key file
     .PARAMETER OutputDirectory
         Output directory for CSR and key file
+    .PARAMETER Days
+        Validity period in days (default is 365)
     .PARAMETER ConfigFile
         Path to configuration template file
     .PARAMETER Country
@@ -46,6 +48,10 @@ function New-CSR {
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
         [string] $OutputDirectory = "$HOME\Desktop",
+
+        [Parameter(HelpMessage = 'Validity period in days (default is 365)')]
+        [ValidateRange(30, 3650)]
+        [System.String] $Days = 365,
 
         [Parameter(Mandatory, ParameterSetName = '__conf', HelpMessage = 'Path to configuration template')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.conf' })]
@@ -151,7 +157,7 @@ function New-CSR {
         $sslParams = @{
             FilePath     = 'openssl' # .exe
             ArgumentList = @(
-                'req -new -nodes'
+                'req -new -nodes -days {0}' -f $Days
                 '-config {0}' -f $configPath
                 '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
                 '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))
