@@ -136,7 +136,7 @@ function New-SelfSignedCertificate {
 
             # SET TEMPLATE FILE WITH NEW VALUES
             $random = [System.IO.Path]::GetRandomFileName().Split('.')[0]
-            $configPath = Join-Path -Path $OutputDirectory -ChildPath ('csr_template_{0}.conf' -f $random)
+            $configPath = Join-Path -Path $OutputDirectory -ChildPath ('template_{0}.conf' -f $random)
             $template | Set-Content -Path $configPath
         }
         else {
