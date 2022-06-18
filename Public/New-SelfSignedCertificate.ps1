@@ -45,7 +45,7 @@ function New-SelfSignedCertificate {
         Comments: <Comment(s)>
         General notes
     ========================================================================= #>
-    [CmdletBinding(DefaultParameterSetName = '__conf')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = '__conf')]
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
@@ -107,11 +107,21 @@ function New-SelfSignedCertificate {
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+        Write-Verbose -Message ('Parameter Set: {0}' -f $PSCmdlet.ParameterSetName)
 
-        # GET OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory | Out-Null }
-        Write-Verbose -Message ('Creating new folder named: {0}' -f (Split-Path -Path $OutputDirectory -Leaf))
+        # CREATE OUTPUT DIRECTORY
+        if (-not (Test-Path -Path $OutputDirectory)) {
 
+            Write-Verbose -Message ('Creating new folder named: {0}' -f (Split-Path -Path $OutputDirectory -Leaf))
+
+            # SHOULD PROCESS
+            if ($PSCmdlet.ShouldProcess($OutputDirectory, "Create Directory")) {
+
+                New-Item -Path $OutputDirectory -ItemType Directory | Out-Null
+            }
+        }
+
+        # CREATE TEMPLATE FILE
         if ($PSCmdlet.ParameterSetName -eq '__input') {
             # GET TEMPLATE
             $template = [System.Collections.ArrayList]::new($CSR_Template)
@@ -134,16 +144,24 @@ function New-SelfSignedCertificate {
                 $template = $template -replace $pattern, $token.Value
             }
 
-            # SET TEMPLATE FILE WITH NEW VALUES
+            # SHOW TEMPLATE
+            Write-Verbose -Message ($template -join "`n")
+
+            # SET TEMPLATE FILE PATH
             $random = [System.IO.Path]::GetRandomFileName().Split('.')[0]
             $configPath = Join-Path -Path $OutputDirectory -ChildPath ('template_{0}.conf' -f $random)
-            $template | Set-Content -Path $configPath
+
+            # SHOULD PROCESS
+            if ($PSCmdlet.ShouldProcess($configPath, "Create File")) {
+
+                # CREATE TEMPLATE FILE
+                Set-Content -Path $configPath -Value $template -Confirm:$false
+            }
         }
         else {
             $configPath = $ConfigFile
         }
-    }
-    End {
+
         # SET FILE NAME
         $selectPattern = Get-Content -Path $configPath | Select-String -Pattern '^CN = (.+)$'
         $fileName = $selectPattern.Matches.Groups[1].Value
@@ -171,8 +189,11 @@ function New-SelfSignedCertificate {
             NoNewWindow  = $true
             PassThru     = $true
         }
+
         $proc = Start-Process @sslParams
 
-        if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode) }
+        if ($proc.ExitCode -NE 0) {
+            Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode)
+        }
     }
 }
