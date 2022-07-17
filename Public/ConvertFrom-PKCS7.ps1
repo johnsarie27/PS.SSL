@@ -22,11 +22,11 @@ function ConvertFrom-PKCS7 {
     Param(
         [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to PKCS7 formatted certificate file')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
-        [string] $Path,
+        [System.String] $Path,
 
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
-        [string] $OutputDirectory = "$HOME\Desktop"
+        [System.String] $OutputDirectory = "$HOME\Desktop"
     )
     Begin {
         # GET OUTPUT DIRECTORY

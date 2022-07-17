@@ -30,7 +30,7 @@ function Export-PFX {
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
-        [string] $OutputDirectory = "$HOME\Desktop",
+        [System.String] $OutputDirectory = "$HOME\Desktop",
 
         [Parameter(Mandatory, HelpMessage = 'Password used to protect exported PFX file')]
         [ValidateNotNullOrEmpty()]
@@ -38,19 +38,19 @@ function Export-PFX {
 
         [Parameter(Mandatory, HelpMessage = 'Path to private key file')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.key', '*.pem' })]
-        [string] $Key,
+        [System.String] $Key,
 
         [Parameter(Mandatory, HelpMessage = 'Path to CA-signed certificate request')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
-        [string] $SignedCSR,
+        [System.String] $SignedCSR,
 
         [Parameter(HelpMessage = 'Path to root CA public certificate')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
-        [string] $RootCA,
+        [System.String] $RootCA,
 
         [Parameter(HelpMessage = 'Path to intermediate CA public certificate')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
-        [string] $IntermediateCA
+        [System.String] $IntermediateCA
     )
     Begin {
         # GET OUTPUT DIRECTORY

@@ -47,7 +47,7 @@ function New-CSR {
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
-        [string] $OutputDirectory = "$HOME\Desktop",
+        [System.String] $OutputDirectory = "$HOME\Desktop",
 
         [Parameter(HelpMessage = 'Validity period in days (default is 365)')]
         [ValidateRange(30, 3650)]
@@ -55,53 +55,53 @@ function New-CSR {
 
         [Parameter(Mandatory, ParameterSetName = '__conf', HelpMessage = 'Path to configuration template')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.conf' })]
-        [string] $ConfigFile,
+        [System.String] $ConfigFile,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Country Name (C)')]
         [Alias('C')]
         [ValidatePattern('^[A-Z]{2}$')]
-        [string] $Country,
+        [System.String] $Country,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'State or Province Name (ST)')]
         [Alias('ST')]
         [ValidatePattern('^[\w\s-]+$')]
-        [string] $State,
+        [System.String] $State,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Locality Name (L)')]
         [Alias('L')]
         [ValidatePattern('^[\w\s-]+$')]
-        [string] $Locality,
+        [System.String] $Locality,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Organization Name (O)')]
         [Alias('O')]
         [ValidatePattern('^[\w\.\s-]+$')]
-        [string] $Organization,
+        [System.String] $Organization,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Organizational Unit Name (OU)')]
         [Alias('OU')]
         [ValidatePattern('^[\w\.\s-]+$')]
-        [string] $OrganizationalUnit,
+        [System.String] $OrganizationalUnit,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Email Address')]
         [ValidatePattern('^[\w\.@-]+$')]
-        [string] $Email,
+        [System.String] $Email,
 
         [Parameter(Mandatory, ParameterSetName = '__input', HelpMessage = 'Common Name (CN)')]
         [Alias('CN')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $CommonName,
+        [System.String] $CommonName,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 1')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN1,
+        [System.String] $SAN1,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 2')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN2,
+        [System.String] $SAN2,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 3')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $SAN3
+        [System.String] $SAN3
     )
     Begin {
         # GET OUTPUT DIRECTORY

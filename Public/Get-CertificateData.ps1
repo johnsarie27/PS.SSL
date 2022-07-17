@@ -20,7 +20,7 @@ function Get-CertificateData {
     Param(
         [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to x509 certificate file')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.crt", "*.cer", "*.pem" })]
-        [string] $Path
+        [System.String] $Path
     )
     Process {
         # VERIFY SIGNED CERTIFICATE
