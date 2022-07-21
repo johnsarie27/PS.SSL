@@ -23,7 +23,7 @@ function ConvertTo-PEM {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, HelpMessage = 'Path to PFX file')]
-        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.pfx" })]
+        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.pfx", "*.p12" })]
         [string] $PFX,
 
         [Parameter(HelpMessage = 'Output directory for PEM file')]
