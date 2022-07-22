@@ -1,9 +1,9 @@
 function ConvertTo-PEM {
     <# =========================================================================
     .SYNOPSIS
-        Convert PFX file to PEM file
+        Convert PFX/P12 file to PEM file
     .DESCRIPTION
-        Convert PFX file to PEM file including private key
+        Convert PFX/P12 file to PEM file including private key
     .PARAMETER PFX
         Path to PFX file
     .PARAMETER OutputDirectory
@@ -22,8 +22,8 @@ function ConvertTo-PEM {
     ========================================================================= #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to PFX file')]
-        [ValidateScript( { Test-Path -Path $_ -PathType Leaf -Include "*.pfx" })]
+        [Parameter(Mandatory, HelpMessage = 'Path to PFX file')]
+        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.pfx", "*.p12" })]
         [System.String] $PFX,
 
         [Parameter(HelpMessage = 'Output directory for PEM file')]
