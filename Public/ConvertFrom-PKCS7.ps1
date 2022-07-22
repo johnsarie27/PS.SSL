@@ -9,7 +9,7 @@ function ConvertFrom-PKCS7 {
     .PARAMETER OutputDirectory
         Output directory path
     .INPUTS
-        System.String.
+        None.
     .OUTPUTS
         None.
     .EXAMPLE
@@ -20,7 +20,7 @@ function ConvertFrom-PKCS7 {
     ========================================================================= #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to PKCS7 formatted certificate file')]
+        [Parameter(Mandatory, HelpMessage = 'Path to PKCS7 formatted certificate file')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
         [System.String] $Path,
 
