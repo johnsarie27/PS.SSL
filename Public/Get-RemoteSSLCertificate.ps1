@@ -30,11 +30,11 @@ function Get-RemoteSSLCertificate {
     Param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, HelpMessage = 'Target System')]
         [ValidateNotNullOrEmpty()]
-        [string[]] $ComputerName,
+        [System.String[]] $ComputerName,
 
         [Parameter(Position = 1, HelpMessage = 'TCP Port')]
         [ValidateRange(1, 65535)]
-        [int] $Port = 443
+        [System.Int32] $Port = 443
     )
     Process {
 

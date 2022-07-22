@@ -22,13 +22,13 @@ function ConvertTo-PEM {
     ========================================================================= #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory, HelpMessage = 'Path to PFX file')]
-        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.pfx", "*.p12" })]
-        [string] $PFX,
+        [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to PFX file')]
+        [ValidateScript( { Test-Path -Path $_ -PathType Leaf -Include "*.pfx" })]
+        [System.String] $PFX,
 
         [Parameter(HelpMessage = 'Output directory for PEM file')]
-        [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
-        [string] $OutputDirectory = "$HOME\Desktop",
+        [ValidateScript( { Test-Path -Path (Split-Path -Path $_) -PathType Container })]
+        [System.String] $OutputDirectory = "$HOME\Desktop",
 
         [Parameter(Mandatory, HelpMessage = 'Password to PFX file')]
         [ValidateNotNullOrEmpty()]

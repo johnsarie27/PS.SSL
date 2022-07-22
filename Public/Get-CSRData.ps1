@@ -20,7 +20,7 @@ function Get-CSRData {
     Param(
         [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to CA-signed certificate request')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.csr" })]
-        [string] $CSR
+        [System.String] $CSR
     )
     Process {
         # VERIFY UNSIGNED CSR
