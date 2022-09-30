@@ -4,9 +4,13 @@
 # Author:   Justin Johns
 # ==============================================================================
 
-# CHECK FOR OPENSSL
-if ($env:Path -notmatch 'openssl') {
-    Write-Warning -Message 'Openssl not found in path. Unable to load module.' -WarningAction Stop
+# CHECK FOR PLATFORM
+if ($IsWindows -or ($null -EQ $IsWindows)) {
+
+    # CHECK FOR OPENSSL
+    if ($env:Path -notmatch 'openssl') {
+        Write-Warning -Message 'Openssl not found in path. Unable to load module.' -WarningAction Stop
+    }
 }
 
 # IMPORT ALL FUNCTIONS
