@@ -10,4 +10,5 @@ Openssl
 
 ### v0.1.6
 
-Added function Export-CertificateData to export individual components of a PEM certificate
+- Added function Export-CertificateData to export individual components of a PEM certificate
+- Added check for Openssl on the path
