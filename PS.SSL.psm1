@@ -1,8 +1,13 @@
 # ==============================================================================
 # Filename: PS.SSL.psm1
-# Version:  0.1.1 | Updated: 2022-04-11
+# Version:  0.1.2 | Updated: 2022-09-30
 # Author:   Justin Johns
 # ==============================================================================
+
+# CHECK FOR OPENSSL
+if ($env:Path -notmatch 'openssl') {
+    Write-Warning -Message 'Openssl not found in path. Unable to load module.' -WarningAction Stop
+}
 
 # IMPORT ALL FUNCTIONS
 foreach ( $directory in @('Public', 'Private') ) {
