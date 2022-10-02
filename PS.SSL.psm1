@@ -1,6 +1,6 @@
 # ==============================================================================
 # Filename: PS.SSL.psm1
-# Version:  0.1.2 | Updated: 2022-09-30
+# Version:  0.1.3 | Updated: 2022-10-02
 # Author:   Justin Johns
 # ==============================================================================
 
@@ -9,6 +9,16 @@ if ($IsWindows -or ($null -EQ $IsWindows)) {
 
     # CHECK FOR OPENSSL
     if ($env:Path -notmatch 'openssl') {
+        Write-Warning -Message 'Openssl not found in path. Unable to load module.' -WarningAction Stop
+    }
+}
+if ($IsMacOS -or $IsLinux) {
+
+    # SET PATHS >> $Env:PATH -split ':'
+    $path = @('/usr/bin', '/usr/sbin', '/sbin', '/bin')
+
+    # LOOK FOR OPENSSL
+    if ((Get-ChildItem -Path $path).Name -notcontains 'openssl') {
         Write-Warning -Message 'Openssl not found in path. Unable to load module.' -WarningAction Stop
     }
 }
