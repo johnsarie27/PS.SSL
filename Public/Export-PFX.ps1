@@ -94,15 +94,20 @@ function Export-PFX {
             NoNewWindow  = $true
             PassThru     = $true
         }
+
+        # ADD CERTIFICATE CHAIN
         if ($chain) { $sslParams.ArgumentList += '-certfile {0}' -f $chain }
-        $proc = Start-Process @sslParams
 
         # OUTPUT CERTIFICATE AND KEY USING PBE-SHA1-3DES ALGORITHM
         # THIS IS NEEDED FOR WINDOWS SERVER COMPATIBILITY
-        if ($PSBoundParameters.ContainsKey('WindowsCompatible')) {
-            $sslParams.ArgumentList += '-certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -nomac'
+        if ($WindowsCompatible) {
+            $sslParams['ArgumentList'] += '-certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -nomac'
         }
 
+        # START OPENSSL
+        $proc = Start-Process @sslParams
+
+        # RETURN RESULT
         if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
         else { Write-Output -InputObject $pfxPath }
     }
