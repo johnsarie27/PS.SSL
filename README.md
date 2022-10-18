@@ -8,6 +8,10 @@ Openssl
 
 ## Updates
 
+### v0.1.7
+
+- Added parameter "WindowsCompatible" to Export-PFX to support import on Windows OS
+
 ### v0.1.6
 
 - Added function Export-CertificateData to export individual components of a PEM certificate
