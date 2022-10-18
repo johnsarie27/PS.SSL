@@ -16,6 +16,8 @@ function Export-PFX {
         Path to root CA public certificate
     .PARAMETER IntermediateCA
         Path to intermediate CA public certificate
+    .PARAMETER WindowsCompatible
+        Export using PBE-SHA1-3DES algorithm
     .INPUTS
         None.
     .OUTPUTS
@@ -50,11 +52,14 @@ function Export-PFX {
 
         [Parameter(HelpMessage = 'Path to intermediate CA public certificate')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
-        [System.String] $IntermediateCA
+        [System.String] $IntermediateCA,
+
+        [Parameter(HelpMessage = 'Export using PBE-SHA1-3DES algorithm')]
+        [System.Management.Automation.SwitchParameter] $WindowsCompatible
     )
     Begin {
         # GET OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory }
+        if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory | Out-Null }
 
         # SET PFX PATH - THIS CAN ALSO BE A ".P12" IF DESIRED
         $pfxPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.pfx' -f (Split-Path -Path $SignedCSR -LeafBase))
@@ -91,6 +96,12 @@ function Export-PFX {
         }
         if ($chain) { $sslParams.ArgumentList += '-certfile {0}' -f $chain }
         $proc = Start-Process @sslParams
+
+        # OUTPUT CERTIFICATE AND KEY USING PBE-SHA1-3DES ALGORITHM
+        # THIS IS NEEDED FOR WINDOWS SERVER COMPATIBILITY
+        if ($PSBoundParameters.ContainsKey('WindowsCompatible')) {
+            $sslParams.ArgumentList += '-certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -nomac'
+        }
 
         if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
         else { Write-Output -InputObject $pfxPath }
