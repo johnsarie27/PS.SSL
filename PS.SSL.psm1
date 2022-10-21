@@ -9,7 +9,7 @@ if ($IsWindows -or ($null -EQ $IsWindows)) {
 
     # CHECK FOR OPENSSL
     if ($env:Path -notmatch 'openssl') {
-        Write-Warning -Message 'Openssl not found in path. Unable to load module.'
+        Write-Warning -Message 'Openssl not found in path. Several functions may not work.'
     }
 }
 if ($IsMacOS -or $IsLinux) {
@@ -19,7 +19,7 @@ if ($IsMacOS -or $IsLinux) {
 
     # LOOK FOR OPENSSL
     if ((Get-ChildItem -Path $path).Name -notcontains 'openssl') {
-        Write-Warning -Message 'Openssl not found in path. Unable to load module.'
+        Write-Warning -Message 'Openssl not found in path. Several functions may not work.'
     }
 }
 
