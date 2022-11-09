@@ -23,10 +23,11 @@ function Export-PFX {
     .OUTPUTS
         System.Object.
     .EXAMPLE
-        PS C:\> <example usage>
-        Explanation of what the example does
+        PS C:\> Export-PFX -Password $secStr -Key .\key.key - SignedCSR .\cert.crt -RootCA .\root.crt
+        Creates and exports PFX file from private key, signed certificate, and root CA
     .NOTES
         General notes
+        https://man.openbsd.org/openssl.1
     ========================================================================= #>
     [CmdletBinding()]
     Param(
