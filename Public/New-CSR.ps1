@@ -121,7 +121,7 @@ function New-CSR {
                 New-Item -Path $OutputDirectory -ItemType Directory | Out-Null
             }
 
-
+            # BUILD CSR BASED ON PARAMETER INPUT
             if ($PSCmdlet.ParameterSetName -eq '__input') {
                 # GET TEMPLATE
                 $template = [System.Collections.ArrayList]::new($CSR_Template)
