@@ -1,8 +1,7 @@
 # ==============================================================================
-# Updated:      2021-12-18
-# Created by:   Justin Johns
-# Filename:     GenerateCSR.ps1
-# Version:      0.0.5
+# Filename: GenerateCSR.ps1
+# Version:  0.0.6 | Updated: 2023-10-05
+# Author:   Justin Johns
 # ==============================================================================
 
 #Requires -Modules PS.SSL
@@ -11,7 +10,11 @@
 .DESCRIPTION
     Create, validate, and complete the CSR process
 .NOTES
-    General notes
+    Version History:
+    - 0.0.6 - Added self-signed cert example
+    - 0.0.5 - (2021-12-18) Previous version
+    - 0.0.1 - Initial version
+    General notes:
 ============================================================================= #>
 
 # IMPORT MODULE
@@ -102,6 +105,14 @@ Export-PFX @pfxParams
 
 #endregion =====================================================================
 
+
 # TEST PASSWORD
 $pfx = "$root\completed\<FILE_NAME>.pfx"
 Get-PfxCertificate -FilePath $pfx -Password (Read-Host -AsSecureString -Prompt 'Password')
+
+
+#region - SELF-SIGNED ==========================================================
+# GENERATE SELF-SIGNED CERTIFICATE
+New-SelfSignedCertificate -CommonName 'myCoolDomain.com'
+
+#endregion =====================================================================
