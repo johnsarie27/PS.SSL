@@ -1,5 +1,5 @@
 function Get-CSRData {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Confirm CSR
     .DESCRIPTION
@@ -15,7 +15,7 @@ function Get-CSRData {
         Explanation of what the example does
     .NOTES
         General notes
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to CA-signed certificate request')]

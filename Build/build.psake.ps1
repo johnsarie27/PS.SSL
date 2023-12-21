@@ -100,7 +100,7 @@ Task 'ImportStagingModule' -depends 'Init', 'CombineFunctionsAndStage' {
 
     # Reload module
     if (Get-Module -Name $env:BHProjectName) {
-        Remove-Module -Name $env:BHProjectName
+        Remove-Module -Name $env:BHProjectName -Force
     }
     # Global scope used for UpdateDocumentation (PlatyPS)
     Import-Module -Name $StagingModulePath -ErrorAction 'Stop' -Force -Global

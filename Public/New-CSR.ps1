@@ -1,5 +1,5 @@
 function New-CSR {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Generate new CSR and Private key file
     .DESCRIPTION
@@ -47,7 +47,7 @@ function New-CSR {
         Example commands
         openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
         openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
-    ========================================================================= #>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = '__conf')]
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]

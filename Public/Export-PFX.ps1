@@ -1,5 +1,5 @@
 function Export-PFX {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Export PFX file
     .DESCRIPTION
@@ -28,7 +28,7 @@ function Export-PFX {
     .NOTES
         General notes
         https://man.openbsd.org/openssl.1
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]

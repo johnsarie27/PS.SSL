@@ -1,5 +1,5 @@
 function ConvertFrom-PKCS7 {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Convert PKCS7 formatted certificate
     .DESCRIPTION
@@ -17,7 +17,7 @@ function ConvertFrom-PKCS7 {
         Converts a PKCS7 formatted certificate to non-PKCS7 format with .crt extension
     .NOTES
         General notes
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, HelpMessage = 'Path to PKCS7 formatted certificate file')]

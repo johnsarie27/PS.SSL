@@ -1,5 +1,5 @@
 function Get-CertificateData {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Get x509 certificate details
     .DESCRIPTION
@@ -15,7 +15,7 @@ function Get-CertificateData {
         Explanation of what the example does
     .NOTES
         General notes
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to x509 certificate file')]
