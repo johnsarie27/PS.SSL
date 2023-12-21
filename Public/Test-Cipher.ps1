@@ -22,8 +22,8 @@ function Test-Cipher {
         Author:   Justin Johns
         Version:  0.1.0 | Last Edit: 2023-12-21
         - 0.1.0 - Initial version
-        Comments: <Comment(s)>
-        General notes
+        Comments:
+        https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html#describe-ssl-policies
     ========================================================================= #>
     [CmdletBinding()]
     Param(
