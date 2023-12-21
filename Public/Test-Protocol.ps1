@@ -1,5 +1,5 @@
 function Test-Protocol {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Test TLS protocol
     .DESCRIPTION
@@ -23,7 +23,7 @@ function Test-Protocol {
         Version:  0.1.0 | Last Edit: 2023-12-21
         - 0.1.0 - Initial version
         Comments:
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true, Position = 0, HelpMessage = 'Target System')]

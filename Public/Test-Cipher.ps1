@@ -1,5 +1,5 @@
 function Test-Cipher {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Test cipher suites
     .DESCRIPTION
@@ -24,7 +24,7 @@ function Test-Cipher {
         - 0.1.0 - Initial version
         Comments:
         https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html#describe-ssl-policies
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true, Position = 0, HelpMessage = 'Target System')]
