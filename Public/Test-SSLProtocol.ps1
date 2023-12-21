@@ -1,5 +1,5 @@
 function Test-SSLProtocol {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Test SSL protcols
     .DESCRIPTION
@@ -20,7 +20,7 @@ function Test-SSLProtocol {
         Original code from:
         https://dscottraynsford.wordpress.com/2016/12/24/test-website-ssl-certificates-continuously-with-powershell-and-pester/
         https://www.sysadmins.lv/blog-en/test-web-server-ssltls-protocol-support-with-powershell.aspx
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, HelpMessage = 'Target System')]

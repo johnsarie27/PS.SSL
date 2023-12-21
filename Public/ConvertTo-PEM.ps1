@@ -1,5 +1,5 @@
 function ConvertTo-PEM {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Convert PFX/P12 file to PEM file
     .DESCRIPTION
@@ -19,7 +19,7 @@ function ConvertTo-PEM {
         Converts myCert.pfx to myCert.pem exposing all certificate details in plain text
     .NOTES
         General notes
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, HelpMessage = 'Path to PFX file')]
