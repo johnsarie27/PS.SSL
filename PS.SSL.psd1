@@ -76,6 +76,8 @@
         'Get-RemoteSSLCertificate'
         'New-CSR'
         'New-SelfSignedCertificate'
+        'Test-Cipher'
+        'Test-Protocol'
         'Test-SSLProtocol'
     )
 
