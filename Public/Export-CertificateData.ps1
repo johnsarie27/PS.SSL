@@ -1,5 +1,5 @@
 function Export-CertificateData {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Short description
     .DESCRIPTION
@@ -24,7 +24,7 @@ function Export-CertificateData {
         - 0.1.0 - Initial version
         Comments: <Comment(s)>
         General notes:
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, Position = 0, HelpMessage = 'Path to PEM file')]

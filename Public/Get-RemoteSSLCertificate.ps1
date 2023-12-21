@@ -1,5 +1,5 @@
 function Get-RemoteSSLCertificate {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Get remote SSL certificate
     .DESCRIPTION
@@ -25,7 +25,7 @@ function Get-RemoteSSLCertificate {
         General notes
         Original code from: https://gist.github.com/jstangroome/5945820
         https://docs.microsoft.com/en-us/archive/blogs/parallel_universe_-_ms_tech_blog/reading-a-certificate-off-a-remote-ssl-server-for-troubleshooting-with-powershell
-    ========================================================================= #>
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, HelpMessage = 'Target System')]

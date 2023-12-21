@@ -1,5 +1,5 @@
 function New-SelfSignedCertificate {
-    <# =========================================================================
+    <#
     .SYNOPSIS
         Generate new self-signed certificate
     .DESCRIPTION
@@ -44,7 +44,7 @@ function New-SelfSignedCertificate {
         - Renamed output template file
         Comments: <Comment(s)>
         General notes
-    ========================================================================= #>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = '__conf')]
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
