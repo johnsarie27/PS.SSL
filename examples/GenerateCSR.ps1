@@ -1,6 +1,6 @@
 # ==============================================================================
 # Filename: GenerateCSR.ps1
-# Version:  0.0.6 | Updated: 2023-10-05
+# Version:  0.0.7 | Updated: 2024-03-08
 # Author:   Justin Johns
 # ==============================================================================
 
@@ -11,6 +11,7 @@
     Create, validate, and complete the CSR process
 .NOTES
     Version History:
+    - 0.0.7 - Update SANs
     - 0.0.6 - Added self-signed cert example
     - 0.0.5 - (2021-12-18) Previous version
     - 0.0.1 - Initial version
@@ -23,16 +24,14 @@ Import-Module -Name 'PS.SSL'
 #region NEW CSR FROM INPUTS ====================================================
 # USE THE FOLLOWING TO CREATE THE CSR
 $csrParams = @{
-    OutputDirectory = "$HOME\Desktop\test\CSR"
-    #Country         = 'US'
-    #State           = 'California'
-    #Locality        = 'Redlands'
-    #Organization    = 'Esri'
-    #OU              = 'PS'
-    CommonName      = 'www.company.com'
-    SAN1            = 'company.com'
-    SAN2            = 'www.company.org'
-    #SAN3            = 'company.org'
+    OutputDirectory        = "$HOME\Desktop\test\CSR"
+    Country                = 'US'
+    State                  = 'California'
+    Locality               = 'Redlands'
+    Organization           = 'Esri'
+    OU                     = 'PS'
+    CommonName             = 'company.com'
+    SubjectAlternativeName = 'new.company.com', 'www.company.org', 'company.org', 'company.info', 'www.company.info'
 }
 New-CSR @csrParams
 

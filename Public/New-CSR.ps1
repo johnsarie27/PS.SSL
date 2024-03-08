@@ -44,7 +44,7 @@ function New-CSR {
         openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
         openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
     #>
-    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = '__conf')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = '__conf')]
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
@@ -94,7 +94,7 @@ function New-CSR {
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN)')]
         [Alias('SAN')]
-        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
+        [ValidatePattern('^[\w\.-]+\.(com|org|gov|info)$')]
         [System.String[]] $SubjectAlternativeName
     )
     Begin {
@@ -109,8 +109,20 @@ function New-CSR {
 
         # BUILD CSR BASED ON PARAMETER INPUT
         if ($PSCmdlet.ParameterSetName -eq '__input') {
-            # GET TEMPLATE
-            $template = [System.Collections.ArrayList]::new($CSR_Template)
+            # CREATE NEW LIST
+            $template = [System.Collections.ArrayList]::new()
+
+            # ADD TEMPLATE TO LIST
+            $template.AddRange($CSR_Template)
+
+            # ADD SUBJECT ALTERNATIVE NAMES TO LIST
+            if ($PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
+                # EVALUATE EACH SAN IN ARRAY
+                for ($i = 2; $i -lt ($SubjectAlternativeName.Count + 2); $i++) {
+                    # ADD SAN TO END OF COLLECTION
+                    $template.Add(('DNS.{0} = {1}' -f $i, $SubjectAlternativeName[$i - 2])) | Out-Null
+                }
+            }
 
             # SET REPLACEMENT TOKENS
             $tokenList = @{ CN = $CommonName }
@@ -121,23 +133,14 @@ function New-CSR {
             if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
             if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress = "#E#"') }
 
-            # REPLACE TOKENS
+            # REPLACE TOKENS IN TEMPLATE
             foreach ($token in $tokenList.GetEnumerator()) {
                 $pattern = '#{0}#' -f $token.key
                 $template = $template -replace $pattern, $token.Value
             }
 
-            # ADD SUBJECT ALTERNATIVE NAMES
-            if ($PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
-                # EVALUATE EACH SAN IN ARRAY
-                for ($i = 2; $i -lt ($SubjectAlternativeName.Count + 2); $i++) {
-                    # ADD SAN TO END OF COLLECTION
-                    $template.Add(('DNS.{0} = {1}' -f $i, $SubjectAlternativeName[$i - 2])) | Out-Null
-                }
-            }
-
             # SHOW TEMPLATE
-            Write-Verbose -Message ($template -join "`n")
+            Write-Verbose -Message ("`n" + ($template -join "`n"))
 
             # SET TEMPLATE FILE WITH NEW VALUES
             $random = [System.IO.Path]::GetRandomFileName().Split('.')[0]
@@ -145,6 +148,9 @@ function New-CSR {
 
             # CREATE TEMPLATE FILE
             Set-Content -Path $configPath -Value $template -Confirm:$false
+
+            # OUTPUT TEMPLATE PATH
+            Write-Verbose -Message ('Template file path: [{0}]' -f $configPath)
         }
         else {
             $configPath = $ConfigFile
