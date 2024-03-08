@@ -55,4 +55,4 @@ New-Variable -Name 'CSR_Template' -Option ReadOnly -Value @(
 # EXPORT MEMBERS
 # THESE ARE SPECIFIED IN THE MODULE MANIFEST AND THEREFORE DON'T NEED TO BE LISTED HERE
 #Export-ModuleMember -Function *
-Export-ModuleMember -Variable 'CSR_Template'
+Export-ModuleMember -Variable 'CSR_Template' -Alias 'New-CSR'

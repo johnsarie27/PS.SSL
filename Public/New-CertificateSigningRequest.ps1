@@ -1,4 +1,4 @@
-function New-CSR {
+function New-CertificateSigningRequest {
     <#
     .SYNOPSIS
         Generate new CSR and Private key file
@@ -31,10 +31,10 @@ function New-CSR {
     .OUTPUTS
         System.Object.
     .EXAMPLE
-        PS C:\> New-CSR -CommonName www.myDomain.com
+        PS C:\> New-CertificateSigningRequest -CommonName www.myDomain.com
         Creates a new CSR and private key for www.myDomain.com
     .NOTES
-        Name:      New-CSR
+        Name:      New-CertificateSigningRequest
         Author:    Justin Johns
         Version:   0.1.1 | Last Edit: 2022-06-20
         - 0.1.0 - Initial versions
@@ -44,6 +44,7 @@ function New-CSR {
         openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
         openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
     #>
+    [Alias('New-CSR')]
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = '__conf')]
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
