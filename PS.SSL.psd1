@@ -74,7 +74,7 @@
         'Get-CertificateData'
         'Get-CSRData'
         'Get-RemoteSSLCertificate'
-        'New-CSR'
+        'New-CertificateSigningRequest'
         'New-SelfSignedCertificate'
         'Test-Cipher'
         'Test-Protocol'
