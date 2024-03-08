@@ -1,6 +1,6 @@
 # ==============================================================================
 # Filename: PS.SSL.psm1
-# Version:  0.1.4 | Updated: 2022-10-21
+# Updated:  2024-03-08
 # Author:   Justin Johns
 # ==============================================================================
 
@@ -50,13 +50,9 @@ New-Variable -Name 'CSR_Template' -Option ReadOnly -Value @(
     'extendedKeyUsage = serverAuth'
     'subjectAltName = @alt_names'
     '[alt_names]'
-    'DNS.1 = #CN#'
-    'DNS.2 = #SAN1#'
-    'DNS.3 = #SAN2#'
-    'DNS.4 = #SAN3#'
 )
 
 # EXPORT MEMBERS
 # THESE ARE SPECIFIED IN THE MODULE MANIFEST AND THEREFORE DON'T NEED TO BE LISTED HERE
 #Export-ModuleMember -Function *
-Export-ModuleMember -Variable 'CSR_Template'
+Export-ModuleMember -Variable 'CSR_Template' -Alias 'New-CSR'
