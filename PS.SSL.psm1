@@ -1,6 +1,6 @@
 # ==============================================================================
 # Filename: PS.SSL.psm1
-# Version:  0.1.4 | Updated: 2022-10-21
+# Updated:  2024-03-08
 # Author:   Justin Johns
 # ==============================================================================
 
@@ -51,9 +51,6 @@ New-Variable -Name 'CSR_Template' -Option ReadOnly -Value @(
     'subjectAltName = @alt_names'
     '[alt_names]'
     'DNS.1 = #CN#'
-    'DNS.2 = #SAN1#'
-    'DNS.3 = #SAN2#'
-    'DNS.4 = #SAN3#'
 )
 
 # EXPORT MEMBERS

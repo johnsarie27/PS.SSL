@@ -24,12 +24,8 @@ function New-CSR {
         Organizational Unit Name (OU)
     .PARAMETER Email
         Email Address
-    .PARAMETER SAN1
-        Subject Alternative Name (SAN) 1
-    .PARAMETER SAN2
-        Subject Alternative Name (SAN) 2
-    .PARAMETER SAN3
-        Subject Alternative Name (SAN) 3
+    .PARAMETER SubjectAlternativeName
+        Subject Alternative Name (SAN)
     .INPUTS
         None.
     .OUTPUTS
@@ -96,96 +92,99 @@ function New-CSR {
         [ValidatePattern('^[\w\.@-]+$')]
         [System.String] $Email,
 
-        [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 1')]
+        [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN)')]
+        [Alias('SAN')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [System.String] $SAN1,
-
-        [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 2')]
-        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [System.String] $SAN2,
-
-        [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN) 3')]
-        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [System.String] $SAN3
+        [System.String[]] $SubjectAlternativeName
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
         Write-Verbose -Message ('Parameter Set: {0}' -f $PSCmdlet.ParameterSetName)
 
+        # GET OUTPUT DIRECTORY
+        if (-not (Test-Path -Path $OutputDirectory)) {
+            Write-Verbose -Message ('Creating new folder named: {0}' -f (Split-Path -Path $OutputDirectory -Leaf))
+            New-Item -Path $OutputDirectory -ItemType Directory | Out-Null
+        }
+
+        # BUILD CSR BASED ON PARAMETER INPUT
+        if ($PSCmdlet.ParameterSetName -eq '__input') {
+            # GET TEMPLATE
+            $template = [System.Collections.ArrayList]::new($CSR_Template)
+
+            # SET REPLACEMENT TOKENS
+            $tokenList = @{ CN = $CommonName }
+            if ($PSBoundParameters.ContainsKey('Country')) { $tokenList.Add('C', $Country) } else { $template.Remove('C = #C#') }
+            if ($PSBoundParameters.ContainsKey('State')) { $tokenList.Add('ST', $State) } else { $template.Remove('ST = #ST#') }
+            if ($PSBoundParameters.ContainsKey('Locality')) { $tokenList.Add('L', $Locality) } else { $template.Remove('L = #L#') }
+            if ($PSBoundParameters.ContainsKey('Organization')) { $tokenList.Add('O', $Organization) } else { $template.Remove('O = #O#') }
+            if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
+            if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress = "#E#"') }
+
+            # REPLACE TOKENS
+            foreach ($token in $tokenList.GetEnumerator()) {
+                $pattern = '#{0}#' -f $token.key
+                $template = $template -replace $pattern, $token.Value
+            }
+
+            # ADD SUBJECT ALTERNATIVE NAMES
+            if ($PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
+                # EVALUATE EACH SAN IN ARRAY
+                for ($i = 2; $i -lt ($SubjectAlternativeName.Count + 2); $i++) {
+                    # ADD SAN TO END OF COLLECTION
+                    $template.Add(('DNS.{0} = {1}' -f $i, $SubjectAlternativeName[$i - 2])) | Out-Null
+                }
+            }
+
+            # SHOW TEMPLATE
+            Write-Verbose -Message ($template -join "`n")
+
+            # SET TEMPLATE FILE WITH NEW VALUES
+            $random = [System.IO.Path]::GetRandomFileName().Split('.')[0]
+            $configPath = Join-Path -Path $OutputDirectory -ChildPath ('csr_template_{0}.conf' -f $random)
+
+            # CREATE TEMPLATE FILE
+            Set-Content -Path $configPath -Value $template -Confirm:$false
+        }
+        else {
+            $configPath = $ConfigFile
+        }
+
+        # SET FILE NAME
+        $selectPattern = Get-Content -Path $configPath | Select-String -Pattern '^CN = (.+)$'
+        $fileName = $selectPattern.Matches.Groups[1].Value
+
+        # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
+        if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
+        Write-Verbose -Message ('New file name: {0}' -f $fileName)
+
+        # SET OPENSSL PARAMETERS
+        # openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
+        # USING THE "-legacy" PARAMETER WILL MAINTAIN COMPATABILITY WITH CERTAIN SERVERS THAT DO NOT YET SUPPORT
+        # THE LATEST CIPHERS OR PROTOCOLS
+        # EXAMPLE> openssl pkcs12 -export -legacy -out example.pfx -inkey example.key -in example.crt
+        $sslParams = @{
+            FilePath     = 'openssl' # .exe
+            ArgumentList = @(
+                'req -new -nodes -days {0}' -f $Days
+                '-config {0}' -f $configPath
+                '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
+                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))
+            )
+            Wait         = $true
+            NoNewWindow  = $true
+            PassThru     = $true
+        }
+
         # SHOULD PROCESS
         if ($PSCmdlet.ShouldProcess($OutputDirectory, "Create Files")) {
 
-            # GET OUTPUT DIRECTORY
-            if (-not (Test-Path -Path $OutputDirectory)) {
-                Write-Verbose -Message ('Creating new folder named: {0}' -f (Split-Path -Path $OutputDirectory -Leaf))
-                New-Item -Path $OutputDirectory -ItemType Directory | Out-Null
-            }
-
-            # BUILD CSR BASED ON PARAMETER INPUT
-            if ($PSCmdlet.ParameterSetName -eq '__input') {
-                # GET TEMPLATE
-                $template = [System.Collections.ArrayList]::new($CSR_Template)
-
-                # SET REPLACEMENT TOKENS
-                $tokenList = @{ CN = $CommonName }
-                if ($PSBoundParameters.ContainsKey('Country')) { $tokenList.Add('C', $Country) } else { $template.Remove('C = #C#') }
-                if ($PSBoundParameters.ContainsKey('State')) { $tokenList.Add('ST', $State) } else { $template.Remove('ST = #ST#') }
-                if ($PSBoundParameters.ContainsKey('Locality')) { $tokenList.Add('L', $Locality) } else { $template.Remove('L = #L#') }
-                if ($PSBoundParameters.ContainsKey('Organization')) { $tokenList.Add('O', $Organization) } else { $template.Remove('O = #O#') }
-                if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
-                if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress = "#E#"') }
-                if ($PSBoundParameters.ContainsKey('SAN1')) { $tokenList.Add('SAN1', $SAN1) } else { $template.Remove('DNS.2 = #SAN1#') }
-                if ($PSBoundParameters.ContainsKey('SAN2')) { $tokenList.Add('SAN2', $SAN2) } else { $template.Remove('DNS.3 = #SAN2#') }
-                if ($PSBoundParameters.ContainsKey('SAN3')) { $tokenList.Add('SAN3', $SAN3) } else { $template.Remove('DNS.4 = #SAN3#') }
-
-                # REPLACE TOKENS
-                foreach ( $token in $tokenList.GetEnumerator() ) {
-                    $pattern = '#{0}#' -f $token.key
-                    $template = $template -replace $pattern, $token.Value
-                }
-
-                # SHOW TEMPLATE
-                Write-Verbose -Message ($template -join "`n")
-
-                # SET TEMPLATE FILE WITH NEW VALUES
-                $random = [System.IO.Path]::GetRandomFileName().Split('.')[0]
-                $configPath = Join-Path -Path $OutputDirectory -ChildPath ('csr_template_{0}.conf' -f $random)
-
-                # CREATE TEMPLATE FILE
-                Set-Content -Path $configPath -Value $template -Confirm:$false
-            }
-            else {
-                $configPath = $ConfigFile
-            }
-
-            # SET FILE NAME
-            $selectPattern = Get-Content -Path $configPath | Select-String -Pattern '^CN = (.+)$'
-            $fileName = $selectPattern.Matches.Groups[1].Value
-
-            # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
-            if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
-            Write-Verbose -Message ('New file name: {0}' -f $fileName)
-
-            # SET OPENSSL PARAMETERS
-            # openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
-            # USING THE "-legacy" PARAMETER WILL MAINTAIN COMPATABILITY WITH CERTAIN SERVERS THAT DO NOT YET SUPPORT
-            # THE LATEST CIPHERS OR PROTOCOLS
-            # EXAMPLE> openssl pkcs12 -export -legacy -out example.pfx -inkey example.key -in example.crt
-            $sslParams = @{
-                FilePath     = 'openssl' # .exe
-                ArgumentList = @(
-                    'req -new -nodes -days {0}' -f $Days
-                    '-config {0}' -f $configPath
-                    '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
-                    '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))
-                )
-                Wait         = $true
-                NoNewWindow  = $true
-                PassThru     = $true
-            }
+            # INVOKE OPENSSL
             $proc = Start-Process @sslParams
 
+            # CHECK FOR ERRORS
             if ($proc.ExitCode -NE 0) {
+                # OUTPUT ERROR
                 Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode)
             }
         }
