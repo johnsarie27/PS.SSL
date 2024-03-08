@@ -36,9 +36,10 @@ function New-CertificateSigningRequest {
     .NOTES
         Name:      New-CertificateSigningRequest
         Author:    Justin Johns
-        Version:   0.1.1 | Last Edit: 2022-06-20
+        Version:   0.2.0 | Last Edit: 2024-03-08
+        - 0.2.0 - (2024-03-08) Fixed SupportsShouldProcess, updated SAN input, renamed function
+        - 0.1.1 - (2022-06-20) Added SupportsShouldProcess
         - 0.1.0 - Initial versions
-        - 0.1.1 - Added SupportsShouldProcess
         General notes
         Example commands
         openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
