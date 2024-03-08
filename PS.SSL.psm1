@@ -50,7 +50,6 @@ New-Variable -Name 'CSR_Template' -Option ReadOnly -Value @(
     'extendedKeyUsage = serverAuth'
     'subjectAltName = @alt_names'
     '[alt_names]'
-    'DNS.1 = #CN#'
 )
 
 # EXPORT MEMBERS

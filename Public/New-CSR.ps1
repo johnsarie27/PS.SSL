@@ -115,12 +115,16 @@ function New-CSR {
             # ADD TEMPLATE TO LIST
             $template.AddRange($CSR_Template)
 
+            # ADD WWW TO COMMON NAME AND ADD TO LIST
+            if ($CommonName -notmatch '^www') { $template.Add(('DNS.1 = www.{0}' -f $CommonName)) | Out-Null; $start = 2 }
+            else { $start = 1 }
+
             # ADD SUBJECT ALTERNATIVE NAMES TO LIST
             if ($PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
                 # EVALUATE EACH SAN IN ARRAY
-                for ($i = 2; $i -lt ($SubjectAlternativeName.Count + 2); $i++) {
+                for ($i = $start; $i -lt ($SubjectAlternativeName.Count + $start); $i++) {
                     # ADD SAN TO END OF COLLECTION
-                    $template.Add(('DNS.{0} = {1}' -f $i, $SubjectAlternativeName[$i - 2])) | Out-Null
+                    $template.Add(('DNS.{0} = {1}' -f $i, $SubjectAlternativeName[$i - $start])) | Out-Null
                 }
             }
 
