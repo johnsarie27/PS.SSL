@@ -1,4 +1,4 @@
-# New-CSR
+# New-CertificateSigningRequest
 
 ## SYNOPSIS
 Generate new CSR and Private key file
@@ -7,15 +7,16 @@ Generate new CSR and Private key file
 
 ### __conf (Default)
 ```
-New-CSR [-OutputDirectory <String>] [-Days <String>] -ConfigFile <String> [-WhatIf] [-Confirm]
- [<CommonParameters>]
+New-CertificateSigningRequest [-OutputDirectory <String>] [-Days <String>] -ConfigFile <String> [-WhatIf]
+ [-Confirm] [<CommonParameters>]
 ```
 
 ### __input
 ```
-New-CSR [-OutputDirectory <String>] [-Days <String>] -CommonName <String> [-Country <String>] [-State <String>]
- [-Locality <String>] [-Organization <String>] [-OrganizationalUnit <String>] [-Email <String>]
- [-SAN1 <String>] [-SAN2 <String>] [-SAN3 <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
+New-CertificateSigningRequest [-OutputDirectory <String>] [-Days <String>] -CommonName <String>
+ [-Country <String>] [-State <String>] [-Locality <String>] [-Organization <String>]
+ [-OrganizationalUnit <String>] [-Email <String>] [-SubjectAlternativeName <String[]>] [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -25,7 +26,7 @@ Generate new CSR and Private key file
 
 ### EXAMPLE 1
 ```
-New-CSR -CommonName www.myDomain.com
+New-CertificateSigningRequest -CommonName www.myDomain.com
 Creates a new CSR and private key for www.myDomain.com
 ```
 
@@ -181,43 +182,13 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SAN1
-Subject Alternative Name (SAN) 1
+### -SubjectAlternativeName
+Subject Alternative Name (SAN)
 
 ```yaml
-Type: String
+Type: String[]
 Parameter Sets: __input
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SAN2
-Subject Alternative Name (SAN) 2
-
-```yaml
-Type: String
-Parameter Sets: __input
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SAN3
-Subject Alternative Name (SAN) 3
-
-```yaml
-Type: String
-Parameter Sets: __input
-Aliases:
+Aliases: SAN
 
 Required: False
 Position: Named
@@ -267,11 +238,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### System.Object.
 ## NOTES
-Name:      New-CSR
+Name:      New-CertificateSigningRequest
 Author:    Justin Johns
-Version:   0.1.1 | Last Edit: 2022-06-20
+Version:   0.2.0 | Last Edit: 2024-03-08
+- 0.2.0 - (2024-03-08) Fixed SupportsShouldProcess, updated SAN input, renamed function
+- 0.1.1 - (2022-06-20) Added SupportsShouldProcess
 - 0.1.0 - Initial versions
-- 0.1.1 - Added SupportsShouldProcess
 General notes
 Example commands
 openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
