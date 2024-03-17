@@ -6,11 +6,11 @@ on:
     tags:
       - "v[0-9].[0-9]+.[0-9]+" # v1.0.0
     branches: [main]
-    paths-ignore:
-      - README.md
-      - CONTRIBUTING.md
-      - .gitignore
-      - .github/**
+    #paths-ignore:
+      #- README.md
+      #- CONTRIBUTING.md
+      #- .gitignore
+      #- .github/**
 
 jobs:
   release:
