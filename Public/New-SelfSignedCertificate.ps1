@@ -36,8 +36,8 @@ function New-SelfSignedCertificate {
     .NOTES
         Name:      New-SelfSignedCertificate
         Author:    Justin Johns
-        Version:   0.1.2 | Last Edit: 2024-04-14
-        - 0.1.2 - (2024-04-14) Fixed SupportsShouldProcess and updated SAN input
+        Version:   0.2.0 | Last Edit: 2024-04-14
+        - 0.2.0 - (2024-04-14) Fixed SupportsShouldProcess and updated SAN input
         - 0.1.1 - (2022-04-13) Renamed output template file
         - 0.1.0 - Initial versions
         Comments: <Comment(s)>
@@ -131,6 +131,12 @@ function New-SelfSignedCertificate {
             if ($PSBoundParameters.ContainsKey('Organization')) { $tokenList.Add('O', $Organization) } else { $template.Remove('O = #O#') }
             if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
             if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress = "#E#"') }
+
+            # REMOVE SAN FROM TEMPLATE IF NOT PROVIDED
+            if (-Not $PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
+                $template.Remove('[alt_names]')
+                $template.Remove('subjectAltName = @alt_names')
+            }
 
             # REPLACE TOKENS
             foreach ($token in $tokenList.GetEnumerator()) {

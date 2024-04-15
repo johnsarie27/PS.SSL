@@ -36,7 +36,8 @@ function New-CertificateSigningRequest {
     .NOTES
         Name:      New-CertificateSigningRequest
         Author:    Justin Johns
-        Version:   0.2.0 | Last Edit: 2024-03-08
+        Version:   0.2.1 | Last Edit: 2024-04-14
+        - 0.2.1 - (2024-04-14) Fixed bug
         - 0.2.0 - (2024-03-08) Fixed SupportsShouldProcess, updated SAN input, renamed function
         - 0.1.1 - (2022-06-20) Added SupportsShouldProcess
         - 0.1.0 - Initial versions
@@ -138,6 +139,12 @@ function New-CertificateSigningRequest {
             if ($PSBoundParameters.ContainsKey('Organization')) { $tokenList.Add('O', $Organization) } else { $template.Remove('O = #O#') }
             if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
             if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress = "#E#"') }
+
+            # REMOVE SAN FROM TEMPLATE IF NOT PROVIDED
+            if (-Not $PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
+                $template.Remove('[alt_names]')
+                $template.Remove('subjectAltName = @alt_names')
+            }
 
             # REPLACE TOKENS IN TEMPLATE
             foreach ($token in $tokenList.GetEnumerator()) {
