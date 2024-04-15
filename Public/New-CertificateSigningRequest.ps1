@@ -36,7 +36,8 @@ function New-CertificateSigningRequest {
     .NOTES
         Name:      New-CertificateSigningRequest
         Author:    Justin Johns
-        Version:   0.2.0 | Last Edit: 2024-03-08
+        Version:   0.2.1 | Last Edit: 2024-04-14
+        - 0.2.1 - (2024-04-14) Fixed bug
         - 0.2.0 - (2024-03-08) Fixed SupportsShouldProcess, updated SAN input, renamed function
         - 0.1.1 - (2022-06-20) Added SupportsShouldProcess
         - 0.1.0 - Initial versions
@@ -63,7 +64,7 @@ function New-CertificateSigningRequest {
         [Parameter(Mandatory, ParameterSetName = '__input', HelpMessage = 'Common Name (CN)')]
         [Alias('CN')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $CommonName,
+        [System.String] $CommonName,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Country Name (C)')]
         [Alias('C')]
@@ -117,16 +118,12 @@ function New-CertificateSigningRequest {
             # ADD TEMPLATE TO LIST
             $template.AddRange($CSR_Template)
 
-            # ADD WWW TO COMMON NAME AND ADD TO LIST
-            if ($CommonName -notmatch '^www') { $template.Add(('DNS.1 = www.{0}' -f $CommonName)) | Out-Null; $start = 2 }
-            else { $start = 1 }
-
             # ADD SUBJECT ALTERNATIVE NAMES TO LIST
             if ($PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
                 # EVALUATE EACH SAN IN ARRAY
-                for ($i = $start; $i -lt ($SubjectAlternativeName.Count + $start); $i++) {
+                for ($i = 1; $i -lt ($SubjectAlternativeName.Count + 1); $i++) {
                     # ADD SAN TO END OF COLLECTION
-                    $template.Add(('DNS.{0} = {1}' -f $i, $SubjectAlternativeName[$i - $start])) | Out-Null
+                    $template.Add(('DNS.{0} = {1}' -f $i, $SubjectAlternativeName[$i - 1])) | Out-Null
                 }
             }
 
@@ -138,6 +135,12 @@ function New-CertificateSigningRequest {
             if ($PSBoundParameters.ContainsKey('Organization')) { $tokenList.Add('O', $Organization) } else { $template.Remove('O = #O#') }
             if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
             if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress = "#E#"') }
+
+            # REMOVE SAN FROM TEMPLATE IF NOT PROVIDED
+            if (-Not $PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
+                $template.Remove('[alt_names]')
+                $template.Remove('subjectAltName = @alt_names')
+            }
 
             # REPLACE TOKENS IN TEMPLATE
             foreach ($token in $tokenList.GetEnumerator()) {
