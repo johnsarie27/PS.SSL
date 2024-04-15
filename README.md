@@ -9,7 +9,7 @@ To install Openssl on Windows using either winget or chocolatey, use the code be
 
 ```pwsh
 # USING CHOCOLATEY
-chooc install openssl
+choco install openssl
 
 # USING WINGET
 winget install --Id ShiningLight.OpenSSL
@@ -19,6 +19,16 @@ To install Openssl on mac OS using Homebrew, use the code below.
 
 ```sh
 brew install openssl@3
+```
+
+To install Openssl on Debian-based Linux, use the follow code.
+
+```sh
+# UPDATE PACKAGE LIST
+sudo apt update
+
+# INSTALL OPENSSL
+sudo ap install openssl -y
 ```
 
 ## Updates
