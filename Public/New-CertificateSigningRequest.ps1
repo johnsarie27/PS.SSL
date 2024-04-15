@@ -63,7 +63,7 @@ function New-CertificateSigningRequest {
         [Parameter(Mandatory, ParameterSetName = '__input', HelpMessage = 'Common Name (CN)')]
         [Alias('CN')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
-        [string] $CommonName,
+        [System.String] $CommonName,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Country Name (C)')]
         [Alias('C')]
