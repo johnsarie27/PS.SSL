@@ -15,7 +15,7 @@ New-SelfSignedCertificate [-OutputDirectory <String>] [-Days <String>] -ConfigFi
 ```
 New-SelfSignedCertificate [-OutputDirectory <String>] [-Days <String>] -CommonName <String> [-Country <String>]
  [-State <String>] [-Locality <String>] [-Organization <String>] [-OrganizationalUnit <String>]
- [-Email <String>] [-SAN1 <String>] [-SAN2 <String>] [-SAN3 <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
+ [-Email <String>] [-SubjectAlternativeName <String[]>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -25,8 +25,8 @@ Generate new self-signed certificate with openssl
 
 ### EXAMPLE 1
 ```
-New-SelfSignedCertificate
-Explanation of what the example does
+New-SelfSignedCertificate -CommonName myDomain.com
+Generates a new self-signed certificate for myDomain.com
 ```
 
 ## PARAMETERS
@@ -181,43 +181,13 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SAN1
-Subject Alternative Name (SAN) 1
+### -SubjectAlternativeName
+Subject Alternative Name (SAN)
 
 ```yaml
-Type: String
+Type: String[]
 Parameter Sets: __input
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SAN2
-Subject Alternative Name (SAN) 2
-
-```yaml
-Type: String
-Parameter Sets: __input
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SAN3
-Subject Alternative Name (SAN) 3
-
-```yaml
-Type: String
-Parameter Sets: __input
-Aliases:
+Aliases: SAN
 
 Required: False
 Position: Named
@@ -269,8 +239,10 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## NOTES
 Name:      New-SelfSignedCertificate
 Author:    Justin Johns
-Version:   0.1.1 | Last Edit: 2022-04-13
-- Renamed output template file
+Version:   0.2.0 | Last Edit: 2024-04-14
+- 0.2.0 - (2024-04-14) Fixed SupportsShouldProcess and updated SAN input
+- 0.1.1 - (2022-04-13) Renamed output template file
+- 0.1.0 - Initial versions
 Comments: \<Comment(s)\>
 General notes
 
