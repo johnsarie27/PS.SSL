@@ -240,7 +240,8 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## NOTES
 Name:      New-CertificateSigningRequest
 Author:    Justin Johns
-Version:   0.2.0 | Last Edit: 2024-03-08
+Version:   0.2.1 | Last Edit: 2024-04-14
+- 0.2.1 - (2024-04-14) Fixed bug
 - 0.2.0 - (2024-03-08) Fixed SupportsShouldProcess, updated SAN input, renamed function
 - 0.1.1 - (2022-06-20) Added SupportsShouldProcess
 - 0.1.0 - Initial versions
