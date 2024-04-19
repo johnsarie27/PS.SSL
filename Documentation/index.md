@@ -28,7 +28,7 @@ To install Openssl on Debian-based Linux, use the follow code.
 sudo apt update
 
 # INSTALL OPENSSL
-sudo ap install openssl -y
+sudo apt install openssl -y
 ```
 
 ## Updates
