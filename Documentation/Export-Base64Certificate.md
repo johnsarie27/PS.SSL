@@ -1,33 +1,24 @@
-# ConvertTo-Base64String
+# Export-Base64Certificate
 
 ## SYNOPSIS
-Convert a byte array to a base64 encoded string
+Convert a byte array to a base64 encoded certificate file
 
 ## SYNTAX
 
 ```
-ConvertTo-Base64String [-ByteArray] <Byte[]> [<CommonParameters>]
+Export-Base64Certificate [-ByteArray] <Byte[]> [-Path] <String> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Convert a byte array to a base64 encoded string
+Convert a byte array to a base64 encoded certificate file
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
 $cert = Get-RemoteSSLCertificate -ComputerName 'example.com'
-PS C:\> ConvertTo-Base64String -ByteArray $cert.RawData
-Convert the remote SSL certificate byte array to a base64 encoded string
-```
-
-### EXAMPLE 2
-```
-$b64s = ConvertTo-Base64String -ByteArray (Get-RemoteSSLCertificate -ComputerName 'example.com').RawData
-PS C:\> $pubCert = @('-----BEGIN CERTIFICATE-----')
-PS C:\> $pubCert += for ($i = 0; $i -LT $b64s.Length; $i += 64) { $b64s.Substring($i, 64) }
-PS C:\> $pubCert += '-----END CERTIFICATE-----'
-Gets the SSL certificate from example.com and converts the raw data to the proper Base64 encoded certificate format
+PS C:\> Export-Base64Certificate -ByteArray $cert.RawData -Path "$HOME\Desktop\example.com.crt"
+Convert the remote SSL certificate byte array to a base64 encoded certificate file and save to the desktop
 ```
 
 ## PARAMETERS
@@ -47,6 +38,21 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -Path
+Path to output certificate file
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### CommonParameters
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
@@ -55,11 +61,11 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ### None.
 ## OUTPUTS
 
-### System.String.
+### None.
 ## NOTES
-Name:     ConvertTo-Base64String
+Name:     Export-Base64Certificate
 Author:   Justin Johns
-Version:  0.1.0 | Last Edit: 2024-04-19
+Version:  0.1.1 | Last Edit: 2024-06-27
 - Version history is captured in repository commit history
 Comments: \<Comment(s)\>
 
