@@ -31,7 +31,7 @@ function Export-Base64Certificate {
         [System.Byte[]] $ByteArray,
 
         [Parameter(Mandatory = $true, Position = 1, HelpMessage = 'Path to output certificate file')]
-        [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Directory })]
+        [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
         [ValidatePattern('^.+\.crt$')]
         [ValidateScript({ -Not (Test-Path -Path $_) })] # ENSURE FILE DOES NOT EXIST
         [System.String] $Path
