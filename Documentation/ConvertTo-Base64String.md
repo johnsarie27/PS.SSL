@@ -1,4 +1,4 @@
-# ConvertTo-Base64String
+# Export-Base64Certificate
 
 ## SYNOPSIS
 Convert a byte array to a base64 encoded string
@@ -6,7 +6,7 @@ Convert a byte array to a base64 encoded string
 ## SYNTAX
 
 ```
-ConvertTo-Base64String [-ByteArray] <Byte[]> [<CommonParameters>]
+Export-Base64Certificate [-ByteArray] <Byte[]> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -17,13 +17,13 @@ Convert a byte array to a base64 encoded string
 ### EXAMPLE 1
 ```
 $cert = Get-RemoteSSLCertificate -ComputerName 'example.com'
-PS C:\> ConvertTo-Base64String -ByteArray $cert.RawData
+PS C:\> Export-Base64Certificate -ByteArray $cert.RawData
 Convert the remote SSL certificate byte array to a base64 encoded string
 ```
 
 ### EXAMPLE 2
 ```
-$b64s = ConvertTo-Base64String -ByteArray (Get-RemoteSSLCertificate -ComputerName 'example.com').RawData
+$b64s = Export-Base64Certificate -ByteArray (Get-RemoteSSLCertificate -ComputerName 'example.com').RawData
 PS C:\> $pubCert = @('-----BEGIN CERTIFICATE-----')
 PS C:\> $pubCert += for ($i = 0; $i -LT $b64s.Length; $i += 64) { $b64s.Substring($i, 64) }
 PS C:\> $pubCert += '-----END CERTIFICATE-----'
@@ -57,7 +57,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### System.String.
 ## NOTES
-Name:     ConvertTo-Base64String
+Name:     Export-Base64Certificate
 Author:   Justin Johns
 Version:  0.1.0 | Last Edit: 2024-04-19
 - Version history is captured in repository commit history

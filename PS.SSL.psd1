@@ -68,8 +68,8 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
         'ConvertFrom-PKCS7'
-        'ConvertTo-Base64String'
         'ConvertTo-PEM'
+        'Export-Base64Certificate'
         'Export-CertificateData'
         'Export-PFX'
         'Get-CertificateData'
