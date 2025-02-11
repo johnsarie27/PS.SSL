@@ -13,6 +13,9 @@ choco install openssl
 
 # USING WINGET
 winget install --Id ShiningLight.OpenSSL
+
+# OR
+winget install --Id ShiningLight.OpenSSL.Light
 ```
 
 To install Openssl on mac OS using Homebrew, use the code below.
