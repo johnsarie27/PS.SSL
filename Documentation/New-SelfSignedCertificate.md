@@ -239,10 +239,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## NOTES
 Name:      New-SelfSignedCertificate
 Author:    Justin Johns
-Version:   0.2.0 | Last Edit: 2024-04-14
-- 0.2.0 - (2024-04-14) Fixed SupportsShouldProcess and updated SAN input
-- 0.1.1 - (2022-04-13) Renamed output template file
-- 0.1.0 - Initial versions
+Version:   0.2.1 | Last Edit: 2025-08-28
 Comments: \<Comment(s)\>
 General notes
 
