@@ -4,7 +4,7 @@ function Test-PrivateKeyCertMatch {
         Test if private key matches certificate
     .DESCRIPTION
         Test if a given private key is associated with a given certificate by
-        comparing the public key hashes extracted from both files using openssl
+        comparing the hashes of the public keys extracted from both files using openssl
     .PARAMETER CertificatePath
         Path to certificate file (.pem, .crt, .cer)
     .PARAMETER PrivateKeyPath
