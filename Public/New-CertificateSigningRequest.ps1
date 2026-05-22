@@ -6,8 +6,6 @@ function New-CertificateSigningRequest {
         Generate new CSR and Private key file
     .PARAMETER OutputDirectory
         Output directory for CSR and key file
-    .PARAMETER Days
-        Validity period in days (default is 365)
     .PARAMETER ConfigFile
         Path to configuration template file
     .PARAMETER CommonName
@@ -36,7 +34,8 @@ function New-CertificateSigningRequest {
     .NOTES
         Name:      New-CertificateSigningRequest
         Author:    Justin Johns
-        Version:   0.2.1 | Last Edit: 2024-04-14
+        Version:   0.3.0 | Last Edit: 2026-05-22
+        - 0.3.0 - (2026-05-22) Removed -Days parameter (CSRs have no validity period; -days is silently ignored by openssl req without -x509). Validity is set by the issuing CA at signing time. (Breaking change.)
         - 0.2.1 - (2024-04-14) Fixed bug
         - 0.2.0 - (2024-03-08) Fixed SupportsShouldProcess, updated SAN input, renamed function
         - 0.1.1 - (2022-06-20) Added SupportsShouldProcess
@@ -52,10 +51,6 @@ function New-CertificateSigningRequest {
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
         [System.String] $OutputDirectory = "$HOME\Desktop",
-
-        [Parameter(HelpMessage = 'Validity period in days (default is 365)')]
-        [ValidateRange(30, 3650)]
-        [System.String] $Days = 365,
 
         [Parameter(Mandatory, ParameterSetName = '__conf', HelpMessage = 'Path to configuration template')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.conf' })]
@@ -178,10 +173,13 @@ function New-CertificateSigningRequest {
         # USING THE "-legacy" PARAMETER WILL MAINTAIN COMPATABILITY WITH CERTAIN SERVERS THAT DO NOT YET SUPPORT
         # THE LATEST CIPHERS OR PROTOCOLS
         # EXAMPLE> openssl pkcs12 -export -legacy -out example.pfx -inkey example.key -in example.crt
+        # NOTE: -days is intentionally NOT passed here. `openssl req` ignores it
+        # unless -x509 is also specified, and CSRs by design carry no validity
+        # period; the issuing CA sets validity at signing time.
         $sslParams = @{
             FilePath     = 'openssl' # .exe
             ArgumentList = @(
-                'req -new -nodes -days {0}' -f $Days
+                'req -new -nodes'
                 '-config {0}' -f $configPath
                 '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
                 '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))
