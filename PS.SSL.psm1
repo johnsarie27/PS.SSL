@@ -24,8 +24,13 @@ if ($IsMacOS -or $IsLinux) {
 }
 
 # IMPORT ALL FUNCTIONS
+# 'Private' is optional and may be absent (no private helpers). Skip missing
+# directories rather than letting Get-ChildItem throw on Linux/macOS where the
+# wildcard path is evaluated more strictly.
 foreach ( $directory in @('Public', 'Private') ) {
-    foreach ( $fn in (Get-ChildItem -Path "$PSScriptRoot\$directory\*.ps1") ) { . $fn.FullName }
+    $dirPath = Join-Path -Path $PSScriptRoot -ChildPath $directory
+    if (-not (Test-Path -Path $dirPath -PathType Container)) { continue }
+    foreach ( $fn in (Get-ChildItem -Path $dirPath -Filter '*.ps1' -File) ) { . $fn.FullName }
 }
 
 # VARIABLES
