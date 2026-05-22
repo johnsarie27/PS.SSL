@@ -31,8 +31,18 @@ function Export-PFX {
     #>
     [CmdletBinding(DefaultParameterSetName = '__nochain')]
     Param(
-        [Parameter(HelpMessage = 'Output directory for CSR and key file')]
-        [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
+        [Parameter(HelpMessage = 'Output directory for generated files')]
+        [ValidateScript({
+                if (Test-Path -Path $_ -PathType Leaf) {
+                    Write-Error -Message "OutputDirectory '$_' exists but is a file, not a directory." -ErrorAction Stop
+                }
+                $parent = Split-Path -Path $_ -Parent
+                if ([string]::IsNullOrEmpty($parent)) { $parent = '.' }
+                if (-not (Test-Path -Path $parent -PathType Container)) {
+                    Write-Error -Message "Parent of OutputDirectory does not exist: $parent" -ErrorAction Stop
+                }
+                $true
+            })]
         [System.String] $OutputDirectory = "$HOME\Desktop",
 
         [Parameter(Mandatory, HelpMessage = 'Password used to protect exported PFX file')]
@@ -65,7 +75,7 @@ function Export-PFX {
     )
     Begin {
         # GET OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory | Out-Null }
+        Initialize-OutputDirectory -Path $OutputDirectory
 
         # SET PFX PATH - THIS CAN ALSO BE A ".P12" IF DESIRED
         $pfxPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.pfx' -f (Split-Path -Path $SignedCSRPath -LeafBase))

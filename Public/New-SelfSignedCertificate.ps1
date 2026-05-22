@@ -50,8 +50,18 @@ function New-SelfSignedCertificate {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = '__conf')]
     Param(
-        [Parameter(HelpMessage = 'Output directory for CSR and key file')]
-        [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
+        [Parameter(HelpMessage = 'Output directory for generated files')]
+        [ValidateScript({
+                if (Test-Path -Path $_ -PathType Leaf) {
+                    Write-Error -Message "OutputDirectory '$_' exists but is a file, not a directory." -ErrorAction Stop
+                }
+                $parent = Split-Path -Path $_ -Parent
+                if ([string]::IsNullOrEmpty($parent)) { $parent = '.' }
+                if (-not (Test-Path -Path $parent -PathType Container)) {
+                    Write-Error -Message "Parent of OutputDirectory does not exist: $parent" -ErrorAction Stop
+                }
+                $true
+            })]
         [System.String] $OutputDirectory = "$HOME\Desktop",
 
         [Parameter(HelpMessage = 'Validity period in days (default is 365)')]
@@ -110,10 +120,7 @@ function New-SelfSignedCertificate {
         Write-Verbose -Message ('Parameter Set: {0}' -f $PSCmdlet.ParameterSetName)
 
         # CREATE OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) {
-            Write-Verbose -Message ('Creating new folder named: {0}' -f (Split-Path -Path $OutputDirectory -Leaf))
-            New-Item -Path $OutputDirectory -ItemType Directory | Out-Null
-        }
+        Initialize-OutputDirectory -Path $OutputDirectory
 
         # CREATE TEMPLATE FILE
         if ($PSCmdlet.ParameterSetName -eq '__input') {

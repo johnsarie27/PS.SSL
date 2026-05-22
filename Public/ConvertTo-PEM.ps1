@@ -27,8 +27,18 @@ function ConvertTo-PEM {
         [Alias('PFX')]
         [System.String] $Path,
 
-        [Parameter(HelpMessage = 'Output directory for PEM file')]
-        [ValidateScript( { Test-Path -Path (Split-Path -Path $_) -PathType Container })]
+        [Parameter(HelpMessage = 'Output directory for generated files')]
+        [ValidateScript({
+                if (Test-Path -Path $_ -PathType Leaf) {
+                    Write-Error -Message "OutputDirectory '$_' exists but is a file, not a directory." -ErrorAction Stop
+                }
+                $parent = Split-Path -Path $_ -Parent
+                if ([string]::IsNullOrEmpty($parent)) { $parent = '.' }
+                if (-not (Test-Path -Path $parent -PathType Container)) {
+                    Write-Error -Message "Parent of OutputDirectory does not exist: $parent" -ErrorAction Stop
+                }
+                $true
+            })]
         [System.String] $OutputDirectory = "$HOME\Desktop",
 
         [Parameter(Mandatory, HelpMessage = 'Password to PFX file')]
@@ -40,10 +50,7 @@ function ConvertTo-PEM {
         Get-PfxCertificate -FilePath $Path -Password $Password -ErrorAction Stop | Out-Null
 
         # GET OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) {
-            New-Item -Path $OutputDirectory -ItemType Directory
-            Write-Verbose -Message ('Created new folder: {0}' -f $OutputDirectory)
-        }
+        Initialize-OutputDirectory -Path $OutputDirectory
 
         # SET OUTPUT FILE NAME
         $name = '{0}.pem' -f (Split-Path -Path $Path -LeafBase)
