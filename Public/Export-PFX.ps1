@@ -77,23 +77,21 @@ function Export-PFX {
                 $chain = $RootCA
             }
         }
-
-        # CREATE CREDENTIAL OBJECT WITH PASSWORD
-        $creds = [System.Management.Automation.PSCredential]::new('UserName', $Password)
     }
     End {
         # SET OPENSSL ARGUMENTS
         # openssl pkcs12 -export -out myDomain.com.pfx -inkey myDomain.com.key -in myDomain.com.crt -certfile CertChain.crt
-        # NOTE: -passout pass:... still exposes the password to process listings.
-        #       Item 2a will migrate this to -passout env:VAR using the helper.
-        $passOutArg = 'pass:{0}' -f $creds.GetNetworkCredential().Password
+        # PASS THE PFX PASSWORD VIA AN ENVIRONMENT VARIABLE SCOPED TO THE
+        # OPENSSL CHILD PROCESS - never on argv, never in the parent session
+        # - so it is invisible to peer-process listings, ETW process-start
+        # events, and EDR command-line telemetry.
         $opensslArgs = [System.Collections.Generic.List[System.String]]::new()
         $opensslArgs.AddRange([System.String[]] @(
             'pkcs12', '-export',
             '-out', $pfxPath,
             '-inkey', $Key,
             '-in', $SignedCSR,
-            '-passout', $passOutArg
+            '-passout', 'env:PSSL_PASSOUT'
         ))
 
         # ADD CERTIFICATE CHAIN
@@ -110,7 +108,11 @@ function Export-PFX {
         }
 
         # INVOKE OPENSSL
-        [System.Void] (Invoke-OpenSsl -ArgumentList $opensslArgs.ToArray())
+        $sslParams = @{
+            ArgumentList        = $opensslArgs.ToArray()
+            EnvironmentVariable = @{ PSSL_PASSOUT = $Password }
+        }
+        [System.Void] (Invoke-OpenSsl @sslParams)
 
         # RETURN PFX PATH
         Write-Output -InputObject $pfxPath
