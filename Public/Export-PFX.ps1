@@ -82,37 +82,37 @@ function Export-PFX {
         $creds = [System.Management.Automation.PSCredential]::new('UserName', $Password)
     }
     End {
-        # SET OPENSSL PARAMETERS
+        # SET OPENSSL ARGUMENTS
         # openssl pkcs12 -export -out myDomain.com.pfx -inkey myDomain.com.key -in myDomain.com.crt -certfile CertChain.crt
-        $sslParams = @{
-            FilePath     = 'openssl' # .exe
-            ArgumentList = @(
-                'pkcs12 -export'
-                '-out {0}' -f $pfxPath
-                '-inkey {0}' -f $Key
-                '-in {0}' -f $SignedCSR
-                #'-certfile {0}' -f $chain
-                '-passout pass:{0}' -f $creds.GetNetworkCredential().Password
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
-        }
+        # NOTE: -passout pass:... still exposes the password to process listings.
+        #       Item 2a will migrate this to -passout env:VAR using the helper.
+        $passOutArg = 'pass:{0}' -f $creds.GetNetworkCredential().Password
+        $opensslArgs = [System.Collections.Generic.List[System.String]]::new()
+        $opensslArgs.AddRange([System.String[]] @(
+            'pkcs12', '-export',
+            '-out', $pfxPath,
+            '-inkey', $Key,
+            '-in', $SignedCSR,
+            '-passout', $passOutArg
+        ))
 
         # ADD CERTIFICATE CHAIN
-        if ($chain) { $sslParams.ArgumentList += '-certfile {0}' -f $chain }
+        if ($chain) { $opensslArgs.AddRange([System.String[]] @('-certfile', $chain)) }
 
         # OUTPUT CERTIFICATE AND KEY USING PBE-SHA1-3DES ALGORITHM
         # THIS IS NEEDED FOR WINDOWS SERVER COMPATIBILITY
         if ($WindowsCompatible) {
-            $sslParams['ArgumentList'] += '-certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -nomac'
+            $opensslArgs.AddRange([System.String[]] @(
+                '-certpbe', 'PBE-SHA1-3DES',
+                '-keypbe', 'PBE-SHA1-3DES',
+                '-nomac'
+            ))
         }
 
-        # START OPENSSL
-        $proc = Start-Process @sslParams
+        # INVOKE OPENSSL
+        [System.Void] (Invoke-OpenSsl -ArgumentList $opensslArgs.ToArray())
 
-        # RETURN RESULT
-        if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
-        else { Write-Output -InputObject $pfxPath }
+        # RETURN PFX PATH
+        Write-Output -InputObject $pfxPath
     }
 }
