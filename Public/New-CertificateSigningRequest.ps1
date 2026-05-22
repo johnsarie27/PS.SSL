@@ -29,7 +29,14 @@ function New-CertificateSigningRequest {
     .INPUTS
         None.
     .OUTPUTS
-        System.Object.
+        None. Writes three files into -OutputDirectory:
+          <CN>.csr          - the certificate signing request
+          <CN>_PRIVATE.key  - the matching private key (unencrypted)
+          <CN>.conf         - the openssl req config used to produce them,
+                              preserved as a reproducible record of the
+                              inputs. Only written when the cmdlet is invoked
+                              in the __input parameter set; -ConfigFile mode
+                              leaves the caller's file alone.
     .EXAMPLE
         PS C:\> New-CertificateSigningRequest -CommonName www.myDomain.com
         Creates a new CSR and private key for www.myDomain.com
@@ -112,65 +119,35 @@ function New-CertificateSigningRequest {
 
         # BUILD CSR BASED ON PARAMETER INPUT
         if ($PSCmdlet.ParameterSetName -eq '__input') {
-            # CREATE NEW LIST
-            $template = [System.Collections.ArrayList]::new()
+            # CN is the source of truth for the artifact basename, so derive it
+            # here rather than reading it back from the rendered .conf.
+            $fileName = $CommonName
 
-            # ADD TEMPLATE TO LIST
-            $template.AddRange($CSR_Template)
+            # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
+            if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
 
-            # ADD SUBJECT ALTERNATIVE NAMES TO LIST
-            if ($PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
-                # EVALUATE EACH SAN IN ARRAY
-                for ($i = 1; $i -lt ($SubjectAlternativeName.Count + 1); $i++) {
-                    # ADD SAN TO END OF COLLECTION
-                    $template.Add(('DNS.{0} = {1}' -f $i, $SubjectAlternativeName[$i - 1])) | Out-Null
-                }
+            # The .conf is intentionally preserved alongside the .csr / .key
+            # outputs as a reproducible record of the request inputs. Name it
+            # after the CN so all sibling artifacts group visually.
+            $configPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.conf' -f $fileName)
+
+            # DELEGATE TEMPLATE RENDERING TO PRIVATE HELPER
+            $buildParams = @{ CommonName = $CommonName; OutputPath = $configPath }
+            foreach ($key in 'Country', 'State', 'Locality', 'Organization', 'OrganizationalUnit', 'Email', 'SubjectAlternativeName') {
+                if ($PSBoundParameters.ContainsKey($key)) { $buildParams[$key] = $PSBoundParameters[$key] }
             }
-
-            # SET REPLACEMENT TOKENS
-            $tokenList = @{ CN = $CommonName }
-            if ($PSBoundParameters.ContainsKey('Country')) { $tokenList.Add('C', $Country) } else { $template.Remove('C = #C#') }
-            if ($PSBoundParameters.ContainsKey('State')) { $tokenList.Add('ST', $State) } else { $template.Remove('ST = #ST#') }
-            if ($PSBoundParameters.ContainsKey('Locality')) { $tokenList.Add('L', $Locality) } else { $template.Remove('L = #L#') }
-            if ($PSBoundParameters.ContainsKey('Organization')) { $tokenList.Add('O', $Organization) } else { $template.Remove('O = #O#') }
-            if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
-            if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress = "#E#"') }
-
-            # REMOVE SAN FROM TEMPLATE IF NOT PROVIDED
-            if (-Not $PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
-                $template.Remove('[alt_names]')
-                $template.Remove('subjectAltName = @alt_names')
-            }
-
-            # REPLACE TOKENS IN TEMPLATE
-            foreach ($token in $tokenList.GetEnumerator()) {
-                $pattern = '#{0}#' -f $token.key
-                $template = $template -replace $pattern, $token.Value
-            }
-
-            # SHOW TEMPLATE
-            Write-Verbose -Message ("`n" + ($template -join "`n"))
-
-            # SET TEMPLATE FILE WITH NEW VALUES
-            $random = [System.IO.Path]::GetRandomFileName().Split('.')[0]
-            $configPath = Join-Path -Path $OutputDirectory -ChildPath ('csr_template_{0}.conf' -f $random)
-
-            # CREATE TEMPLATE FILE
-            Set-Content -Path $configPath -Value $template -Confirm:$false
-
-            # OUTPUT TEMPLATE PATH
-            Write-Verbose -Message ('Template file path: [{0}]' -f $configPath)
+            Build-CsrConfig @buildParams
         }
         else {
             $configPath = $ConfigFile
+
+            # SET FILE NAME (extract CN from caller-supplied config)
+            $selectPattern = Get-Content -Path $configPath | Select-String -Pattern '^CN = (.+)$'
+            $fileName = $selectPattern.Matches.Groups[1].Value
+
+            # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
+            if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
         }
-
-        # SET FILE NAME
-        $selectPattern = Get-Content -Path $configPath | Select-String -Pattern '^CN = (.+)$'
-        $fileName = $selectPattern.Matches.Groups[1].Value
-
-        # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
-        if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
         Write-Verbose -Message ('New file name: {0}' -f $fileName)
 
         # SET OPENSSL ARGUMENTS
