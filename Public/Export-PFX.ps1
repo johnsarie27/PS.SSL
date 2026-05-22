@@ -8,14 +8,14 @@ function Export-PFX {
         Output directory for new PFX file
     .PARAMETER Password
         Password used to protect exported PFX file
-    .PARAMETER Key
-        Path to private key file
-    .PARAMETER SignedCSR
-        Path to CA-signed certificate request
-    .PARAMETER RootCA
-        Path to root CA public certificate
-    .PARAMETER IntermediateCA
-        Path to intermediate CA public certificate
+    .PARAMETER KeyPath
+        Path to private key file. Accepts the legacy alias -Key.
+    .PARAMETER SignedCSRPath
+        Path to CA-signed certificate request. Accepts the legacy alias -SignedCSR.
+    .PARAMETER RootCAPath
+        Path to root CA public certificate. Accepts the legacy alias -RootCA.
+    .PARAMETER IntermediateCAPath
+        Path to intermediate CA public certificate. Accepts the legacy alias -IntermediateCA.
     .PARAMETER WindowsCompatible
         Export using PBE-SHA1-3DES algorithm
     .INPUTS
@@ -23,7 +23,7 @@ function Export-PFX {
     .OUTPUTS
         System.Object.
     .EXAMPLE
-        PS C:\> Export-PFX -Password $secStr -Key .\key.key - SignedCSR .\cert.crt -RootCA .\root.crt
+        PS C:\> Export-PFX -Password $secStr -KeyPath .\key.key -SignedCSRPath .\cert.crt -RootCAPath .\root.crt
         Creates and exports PFX file from private key, signed certificate, and root CA
     .NOTES
         General notes
@@ -41,20 +41,24 @@ function Export-PFX {
 
         [Parameter(Mandatory, HelpMessage = 'Path to private key file')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.key', '*.pem' })]
-        [System.String] $Key,
+        [Alias('Key')]
+        [System.String] $KeyPath,
 
         [Parameter(Mandatory, HelpMessage = 'Path to CA-signed certificate request')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
-        [System.String] $SignedCSR,
+        [Alias('SignedCSR')]
+        [System.String] $SignedCSRPath,
 
         [Parameter(Mandatory, ParameterSetName = '__rootonly', HelpMessage = 'Path to root CA public certificate')]
         [Parameter(Mandatory, ParameterSetName = '__fullchain', HelpMessage = 'Path to root CA public certificate')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
-        [System.String] $RootCA,
+        [Alias('RootCA')]
+        [System.String] $RootCAPath,
 
         [Parameter(Mandatory, ParameterSetName = '__fullchain', HelpMessage = 'Path to intermediate CA public certificate')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
-        [System.String] $IntermediateCA,
+        [Alias('IntermediateCA')]
+        [System.String] $IntermediateCAPath,
 
         [Parameter(HelpMessage = 'Export using PBE-SHA1-3DES algorithm')]
         [System.Management.Automation.SwitchParameter] $WindowsCompatible
@@ -64,17 +68,17 @@ function Export-PFX {
         if (-not (Test-Path -Path $OutputDirectory)) { New-Item -Path $OutputDirectory -ItemType Directory | Out-Null }
 
         # SET PFX PATH - THIS CAN ALSO BE A ".P12" IF DESIRED
-        $pfxPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.pfx' -f (Split-Path -Path $SignedCSR -LeafBase))
+        $pfxPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.pfx' -f (Split-Path -Path $SignedCSRPath -LeafBase))
 
         # COMBINE CERTIFICATES IN CHAIN (parameter set guarantees RootCA is present when IntermediateCA is)
         switch ($PSCmdlet.ParameterSetName) {
             '__fullchain' {
                 $chain = Join-Path -Path $OutputDirectory -ChildPath 'CAChain.crt'
-                Get-Content -Path $IntermediateCA | Set-Content -Path $chain
-                Get-Content -Path $RootCA | Add-Content -Path $chain
+                Get-Content -Path $IntermediateCAPath | Set-Content -Path $chain
+                Get-Content -Path $RootCAPath | Add-Content -Path $chain
             }
             '__rootonly' {
-                $chain = $RootCA
+                $chain = $RootCAPath
             }
         }
     }
@@ -89,8 +93,8 @@ function Export-PFX {
         $opensslArgs.AddRange([System.String[]] @(
             'pkcs12', '-export',
             '-out', $pfxPath,
-            '-inkey', $Key,
-            '-in', $SignedCSR,
+            '-inkey', $KeyPath,
+            '-in', $SignedCSRPath,
             '-passout', 'env:PSSL_PASSOUT'
         ))
 

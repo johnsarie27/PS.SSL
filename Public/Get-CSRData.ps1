@@ -11,8 +11,9 @@ function Get-CSRData {
         verify OK" / "Signature did not match" message, written to stderr) is
         surfaced as a boolean property. Verification failure does NOT
         terminate the function so callers can report on invalid CSRs too.
-    .PARAMETER CSR
-        Path to a certificate signing request (.csr) file.
+    .PARAMETER Path
+        Path to a certificate signing request (.csr) file. Accepts the legacy
+        alias -CSR.
     .INPUTS
         System.String. Pipe a file path.
     .OUTPUTS
@@ -20,10 +21,10 @@ function Get-CSRData {
           Path, Subject, PublicKeyAlgorithm, PublicKeyBits,
           SignatureAlgorithm, SubjectAlternativeName, Verified, Raw.
     .EXAMPLE
-        PS C:\> Get-CSRData -CSR .\example.csr | Select-Object Subject, Verified
+        PS C:\> Get-CSRData -Path .\example.csr | Select-Object Subject, Verified
         Inspect summary fields.
     .EXAMPLE
-        PS C:\> (Get-CSRData -CSR .\example.csr).Raw
+        PS C:\> (Get-CSRData -Path .\example.csr).Raw
         Print the full openssl -text dump (preserves the pre-3a output format
         for callers that want the original visual review experience).
     .NOTES
@@ -47,14 +48,15 @@ function Get-CSRData {
                 if ($ext -ne '.csr') { Write-Error -Message "Unsupported extension '$ext'. Expected .csr." -ErrorAction Stop }
                 $true
             })]
-        [System.String] $CSR
+        [Alias('CSR')]
+        [System.String] $Path
     )
     Process {
         # openssl req -text -noout -verify -in <csr>
         # -IgnoreExitCode: a verification failure should produce a structured
         # object with Verified=$false, not terminate.
         $sslParams = @{
-            ArgumentList    = @('req', '-text', '-noout', '-verify', '-in', $CSR)
+            ArgumentList    = @('req', '-text', '-noout', '-verify', '-in', $Path)
             IgnoreExitCode  = $true
         }
         $result = Invoke-OpenSsl @sslParams
@@ -102,7 +104,7 @@ function Get-CSRData {
         $verified = ($text -match 'self-signature verify OK' -or $text -match '(?m)^\s*verify OK\s*$')
 
         [PSCustomObject] @{
-            Path                   = $CSR
+            Path                   = $Path
             Subject                = $subject
             PublicKeyAlgorithm     = $publicKeyAlgorithm
             PublicKeyBits          = $publicKeyBits

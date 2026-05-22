@@ -4,8 +4,8 @@ function ConvertTo-PEM {
         Convert PFX/P12 file to PEM file
     .DESCRIPTION
         Convert PFX/P12 file to PEM file including private key
-    .PARAMETER PFX
-        Path to PFX file
+    .PARAMETER Path
+        Path to PFX file. Accepts the legacy alias -PFX.
     .PARAMETER OutputDirectory
         Path to plain text output directory
     .PARAMETER Password
@@ -15,7 +15,7 @@ function ConvertTo-PEM {
     .OUTPUTS
         None.
     .EXAMPLE
-        PS C:\> ConvertTo-PEM -PFX .\myCert.pfx -OutputDirectory .\newFolder -Password $pw
+        PS C:\> ConvertTo-PEM -Path .\myCert.pfx -OutputDirectory .\newFolder -Password $pw
         Converts myCert.pfx to myCert.pem exposing all certificate details in plain text
     .NOTES
         General notes
@@ -24,7 +24,8 @@ function ConvertTo-PEM {
     Param(
         [Parameter(Mandatory, HelpMessage = 'Path to PFX file')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.pfx", "*.p12" })]
-        [System.String] $PFX,
+        [Alias('PFX')]
+        [System.String] $Path,
 
         [Parameter(HelpMessage = 'Output directory for PEM file')]
         [ValidateScript( { Test-Path -Path (Split-Path -Path $_) -PathType Container })]
@@ -36,7 +37,7 @@ function ConvertTo-PEM {
     )
     Begin {
         # VALIDATE PASSWORD
-        Get-PfxCertificate -FilePath $PFX -Password $Password -ErrorAction Stop | Out-Null
+        Get-PfxCertificate -FilePath $Path -Password $Password -ErrorAction Stop | Out-Null
 
         # GET OUTPUT DIRECTORY
         if (-not (Test-Path -Path $OutputDirectory)) {
@@ -45,7 +46,7 @@ function ConvertTo-PEM {
         }
 
         # SET OUTPUT FILE NAME
-        $name = '{0}.pem' -f (Split-Path -Path $PFX -LeafBase)
+        $name = '{0}.pem' -f (Split-Path -Path $Path -LeafBase)
         Write-Verbose -Message ('Set filename to: {0}' -f $name)
     }
     End {
@@ -57,7 +58,7 @@ function ConvertTo-PEM {
         # and EDR command-line telemetry.
         $outFile = Join-Path -Path $OutputDirectory -ChildPath $name
         $sslParams = @{
-            ArgumentList        = @('pkcs12', '-in', $PFX, '-out', $outFile, '-nodes', '-passin', 'env:PSSL_PASSIN')
+            ArgumentList        = @('pkcs12', '-in', $Path, '-out', $outFile, '-nodes', '-passin', 'env:PSSL_PASSIN')
             EnvironmentVariable = @{ PSSL_PASSIN = $Password }
         }
         [System.Void] (Invoke-OpenSsl @sslParams)
