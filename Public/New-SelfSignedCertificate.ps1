@@ -171,34 +171,27 @@ function New-SelfSignedCertificate {
         if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
         Write-Verbose -Message ('New file name: {0}' -f $fileName)
 
-        # SET OPENSSL PARAMETERS
+        # SET OPENSSL ARGUMENTS
         # openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
         # -newkey/-sha256 are emitted explicitly so output is deterministic
         # even when a custom -ConfigFile omits default_bits/default_md.
-        $sslParams = @{
-            FilePath     = 'openssl'
-            ArgumentList = @(
-                'req -new -x509 -nodes -newkey rsa:{0} -sha256 -days {1}' -f $KeySize, $Days
-                '-config {0}' -f $configPath
-                '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
-                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.pem' -f $fileName))
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
-        }
+        $keyoutPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName)
+        $certOutPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.pem' -f $fileName)
+        $opensslArgs = @(
+            'req', '-new', '-x509', '-nodes',
+            '-newkey', ('rsa:{0}' -f $KeySize),
+            '-sha256',
+            '-days', $Days.ToString(),
+            '-config', $configPath,
+            '-keyout', $keyoutPath,
+            '-out', $certOutPath
+        )
 
         # SHOULD PROCESS
         if ($PSCmdlet.ShouldProcess($OutputDirectory, "Create Files")) {
 
             # GENERATE CERTIFICATE FILES USING OPENSSL
-            $proc = Start-Process @sslParams
-
-            # CHECK FOR ERRORS
-            if ($proc.ExitCode -NE 0) {
-                # OUTPUT ERROR
-                Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode)
-            }
+            [System.Void] (Invoke-OpenSsl -ArgumentList $opensslArgs)
         }
     }
 }
