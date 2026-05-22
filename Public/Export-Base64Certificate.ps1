@@ -40,20 +40,15 @@ function Export-Base64Certificate {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
     }
     Process {
-        # CONVERT BYTE ARRAY TO BASE64 ENCODED STRING
-        $b64s = [System.Convert]::ToBase64String($ByteArray)
-
-        # SET LENGTH OF BASE64 ENCODED STRING
-        $b64sLength = $b64s.Length
-
-        # CREATE ARRAY OF CERTIFICATE DATA
-        $pubCert = @('-----BEGIN CERTIFICATE-----')
-        $pubCert += for ($i = 0; $i -LT $b64s.Length; $i += 64) {
-            if ($b64sLength -ge 64) { $b64s.Substring($i, 64) }
-            else { $b64s.Substring($i, $b64sLength) }
-            $b64sLength -= 64
+        # Base64-encode and wrap at 64 chars per RFC 7468 (PEM) line width.
+        # .NET's Base64FormattingOptions.InsertLineBreaks wraps at 76 (RFC 2045
+        # / MIME), so we slice manually to stay PEM-compliant.
+        $b64 = [System.Convert]::ToBase64String($ByteArray)
+        $lines = for ($i = 0; $i -lt $b64.Length; $i += 64) {
+            $take = [System.Math]::Min(64, $b64.Length - $i)
+            $b64.Substring($i, $take)
         }
-        $pubCert += '-----END CERTIFICATE-----'
+        $pubCert = @('-----BEGIN CERTIFICATE-----') + $lines + '-----END CERTIFICATE-----'
 
         # OUTPUT BASE64 ENCODED CERTIFICATE
         Set-Content -Path $Path -Value $pubCert
