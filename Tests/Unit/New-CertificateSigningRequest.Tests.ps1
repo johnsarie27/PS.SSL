@@ -5,6 +5,12 @@ BeforeAll {
     else {
         Join-Path -Path $PSScriptRoot -ChildPath '..\..\PS.SSL.psd1' | Resolve-Path | Select-Object -ExpandProperty Path
     }
+    # Remove any existing PS.SSL copies first. `-Force` re-imports but does
+    # not displace a module already loaded from a different absolute path
+    # (e.g. the staged build output vs. the source tree), which would leave
+    # two PS.SSL modules in the session and break `Mock -ModuleName PS.SSL`
+    # with "Multiple script or manifest modules ... currently loaded".
+    Get-Module -Name 'PS.SSL' -All | Remove-Module -Force -ErrorAction SilentlyContinue
     Import-Module -Name $manifestPath -Force
 }
 
