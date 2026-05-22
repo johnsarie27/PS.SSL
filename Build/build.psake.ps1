@@ -75,16 +75,32 @@ Task 'CombineFunctionsAndStage' -depends 'Setup' {
     #$combinedModulePath = Join-Path -Path $StagingModulePath -ChildPath "$($env:BHProjectName).psm1"
     #@($publicFunctions + $privateFunctions) | Get-Content | Add-Content -Path $combinedModulePath
 
-    # Copy other required folders and files. 'Private' is optional and may not
-    # exist when there are no private helpers; filter to existing paths so the
-    # build does not fail in that case.
-    $pathsToCopy = @(
-        Join-Path -Path $ProjectRoot -ChildPath 'Private'
+    # Copy other required folders and files.
+    # 'Private' is optional (no private helpers yet) so it is skipped when
+    # absent. All other entries are required; an empty required directory is
+    # treated as a build failure because it usually means files were lost or a
+    # checkout went wrong.
+    $requiredPaths = @(
         Join-Path -Path $ProjectRoot -ChildPath 'Public'
         Join-Path -Path $ProjectRoot -ChildPath 'README.md'
         Join-Path -Path $ProjectRoot -ChildPath ($env:BHProjectName + '.psd1')
         Join-Path -Path $ProjectRoot -ChildPath ($env:BHProjectName + '.psm1')
-    ) | Where-Object { Test-Path -Path $_ }
+    )
+    $optionalPaths = @(
+        Join-Path -Path $ProjectRoot -ChildPath 'Private'
+    )
+
+    foreach ($p in $requiredPaths) {
+        if (-not (Test-Path -Path $p)) {
+            throw "Required build input not found: $p"
+        }
+        if ((Test-Path -Path $p -PathType 'Container') -and
+            -not (Get-ChildItem -Path $p -File -Recurse -ErrorAction 'SilentlyContinue')) {
+            throw "Required build input directory is empty: $p"
+        }
+    }
+
+    $pathsToCopy = $requiredPaths + ($optionalPaths | Where-Object { Test-Path -Path $_ })
     Copy-Item -Path $pathsToCopy -Destination $StagingModulePath -Recurse
 
     # Copy existing manifest
