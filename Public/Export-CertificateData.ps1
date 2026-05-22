@@ -64,11 +64,7 @@ function Export-CertificateData {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, Position = 0, HelpMessage = 'Path to PEM file')]
-        # Test-Path -Filter / -Include are silently ignored when -Path is a
-        # literal value (they only filter when -Path contains a wildcard), so
-        # the extension check has to be explicit. -like '*.pem' is the
-        # smallest correct form; the surrounding Test-Path enforces existence.
-        [ValidateScript({ (Test-Path -Path $_ -PathType Leaf) -and ($_ -like '*.pem') })]
+        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.pem' })]
         [System.String] $Path,
 
         [Parameter(Position = 1, HelpMessage = 'Output directory for generated files')]
