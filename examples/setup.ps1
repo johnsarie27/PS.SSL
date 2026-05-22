@@ -10,7 +10,7 @@ $moduleUrl = 'https://github.com/johnsarie27/PS.SSL/archive/refs/heads/main.zip'
 $moduleFolder = "$HOME\Documents\PowerShell\Modules"
 
 # STEP 1: INSTALL OPENSSL
-choco install openssl -y
+winget install --Id ShiningLight.OpenSSL --silent --accept-source-agreements --accept-package-agreements
 
 # STEP 2: DOWNLOAD COMPRESSED MODULE
 Invoke-WebRequest -Uri $moduleUrl -OutFile "$HOME\Desktop\PS.SSL.zip"
