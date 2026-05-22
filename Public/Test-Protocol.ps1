@@ -50,22 +50,19 @@ function Test-Protocol {
         }
     }
     Process {
-        # SET SSL PARAMETERS
-        $sslParams = @{
-            FilePath     = 'openssl'
-            ArgumentList = @(
-                #openssl.exe s_client -connect 10.0.0.24:3389 -tls1
-                's_client -connect {0}:{1} -{2}' -f $ComputerName, $Port, $protoHash[$Protocol]
-            )
-            Wait = $true; NoNewWindow = $true; PassThru = $true
+        # openssl.exe s_client -connect 10.0.0.24:3389 -tls1
+        # A non-zero exit means the server rejected the protocol; preserve the
+        # existing non-terminating Write-Error behavior. Item 3b will rework
+        # this to return a structured object.
+        $endpoint = '{0}:{1}' -f $ComputerName, $Port
+        $protoSwitch = '-{0}' -f $protoHash[$Protocol]
+        $result = Invoke-OpenSsl -ArgumentList @('s_client', '-connect', $endpoint, $protoSwitch) -IgnoreExitCode
+
+        if ($result.ExitCode -ne 0) {
+            Write-Error -Message ('openssl failed with exit code {0}: {1}' -f $result.ExitCode, $result.StdErr.Trim())
         }
-
-        # GENERATE CERTIFICATE FILES USING OPENSSL
-        $proc = Start-Process @sslParams
-
-        # VALIDATE RESPONSE
-        if ($proc.ExitCode -NE 0) {
-            Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode)
+        else {
+            $result.StdOut
         }
     }
 }
