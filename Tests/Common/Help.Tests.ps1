@@ -11,9 +11,17 @@ BeforeDiscovery {
 # (e.g., Public/ got emptied or the manifest's FunctionsToExport drifted).
 # Without this, the data-driven 'Describe -ForEach $Cmdlets' below produces
 # zero It blocks and the suite passes.
+# NOTE: In Pester 5, BeforeDiscovery state does not flow to It blocks, so the
+# module must be re-imported in BeforeAll for the run-time scope.
 Describe 'Module surface' {
+    BeforeAll {
+        if (-not (Get-Module -Name $env:BHProjectName)) {
+            Import-Module -Name $env:BHPSModuleManifest -ErrorAction 'Stop' -Force
+        }
+    }
     It 'Exports at least one command' {
-        $Cmdlets.Count | Should -BeGreaterThan 0
+        $exported = Get-Command -Module $env:BHProjectName -CommandType 'Cmdlet', 'Function' -ErrorAction 'Stop'
+        $exported.Count | Should -BeGreaterThan 0
     }
 }
 
