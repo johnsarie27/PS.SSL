@@ -18,7 +18,7 @@ function ConvertTo-PEM {
         PS C:\> ConvertTo-PEM -Path .\myCert.pfx -OutputDirectory .\newFolder -Password $pw
         Converts myCert.pfx to myCert.pem exposing all certificate details in plain text
     .NOTES
-        General notes
+        Status: Stable
     #>
     [CmdletBinding()]
     Param(

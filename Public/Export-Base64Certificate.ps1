@@ -17,11 +17,7 @@ function Export-Base64Certificate {
         PS C:\> Export-Base64Certificate -ByteArray $cert.RawData -Path "$HOME\Desktop\example.com.crt"
         Convert the remote SSL certificate byte array to a base64 encoded certificate file and save to the desktop
     .NOTES
-        Name:     Export-Base64Certificate
-        Author:   Justin Johns
-        Version:  0.1.2 | Last Edit: 2026-05-22
-        - Version history is captured in repository commit history
-        Comments: <Comment(s)>
+        Status: Stable
     #>
     [CmdletBinding()]
     [OutputType([System.String])]

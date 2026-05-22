@@ -25,8 +25,7 @@ function Get-CertificateData {
         PS C:\> (Get-CertificateData -Path .\example.pem).Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.17' } | ForEach-Object { $_.Format($true) }
         Print the Subject Alternative Name extension in human-readable form.
     .NOTES
-        Name:      Get-CertificateData
-        Author:    Justin Johns
+        Status: Beta
         - PEM files containing multiple concatenated certificates (e.g.
           fullchain.pem) are reduced to the FIRST certificate only. This
           matches the previous behavior of `openssl x509 -text -noout`.

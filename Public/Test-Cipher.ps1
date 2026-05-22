@@ -23,10 +23,8 @@ function Test-Cipher {
         ------------ ---- ------                       --------- -----
         myServer.com  443 ECDHE-RSA-AES128-GCM-SHA256       True
     .NOTES
-        Name:     Test-Cipher
-        Author:   Justin Johns
-        Version:  0.2.0 | Last Edit: 2026-05-22
-        - Version history is captured in repository commit history
+        Status: Stable
+        References:
         https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html#describe-ssl-policies
     #>
     [CmdletBinding()]

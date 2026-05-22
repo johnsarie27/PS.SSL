@@ -24,6 +24,8 @@ function Get-RemoteSSLCertificate {
         PS C:\> Get-RemoteSSLCertificate -ComputerName $sites | Select-Object NotBefore, NotAfter, Subject
         The first command creates an array of multiple websites. The second commands tests each site and returns the expiry info
     .NOTES
+        Status: Stable
+
         SECURITY: This function intentionally bypasses TLS certificate
         validation. Its purpose is to retrieve the remote certificate -
         including expired, self-signed, hostname-mismatched, or otherwise
@@ -41,7 +43,8 @@ function Get-RemoteSSLCertificate {
         untrusted data. Do not chain it into trust decisions, pin it, or
         present it as proof of identity.
 
-        Original code from: https://gist.github.com/jstangroome/5945820
+        References:
+        https://gist.github.com/jstangroome/5945820
         https://docs.microsoft.com/en-us/archive/blogs/parallel_universe_-_ms_tech_blog/reading-a-certificate-off-a-remote-ssl-server-for-troubleshooting-with-powershell
     #>
     [CmdletBinding()]

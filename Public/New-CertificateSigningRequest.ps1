@@ -41,14 +41,7 @@ function New-CertificateSigningRequest {
         PS C:\> New-CertificateSigningRequest -CommonName www.myDomain.com
         Creates a new CSR and private key for www.myDomain.com
     .NOTES
-        Name:      New-CertificateSigningRequest
-        Author:    Justin Johns
-        Version:   0.3.0 | Last Edit: 2026-05-22
-        - Version history is captured in repository commit history
-        General notes
-        Example commands
-        openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
-        openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
+        Status: Stable
     #>
     [Alias('New-CSR')]
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = '__conf')]

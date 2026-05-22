@@ -32,8 +32,7 @@ function Test-OutputDirectoryPath {
         PS C:\> [ValidateScript({ Test-OutputDirectoryPath $_ })]
         PS C:\> [string] $OutputDirectory
     .NOTES
-        Name:      Test-OutputDirectoryPath
-        Author:    Justin Johns
+        Status: Stable
         - Paired with Private/Initialize-OutputDirectory.ps1, which
           handles the creation half once binding succeeds.
         - Uses `Write-Error -ErrorAction Stop` rather than `throw` to

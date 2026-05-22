@@ -42,8 +42,7 @@ function Build-CsrConfig {
     .EXAMPLE
         PS C:\> Build-CsrConfig -CommonName www.example.com -OutputPath C:\out\www.example.com.conf -Organization Contoso
     .NOTES
-        Name:      Build-CsrConfig
-        Author:    Justin Johns
+        Status: Stable
         - Reads the module-scoped $CSR_Template variable defined in PS.SSL.psm1.
         - The token-substitution behavior is preserved verbatim from the
           original inline implementations in the two public callers, so this

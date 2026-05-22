@@ -23,10 +23,7 @@ function Test-Protocol {
         ------------ ---- -------- --------- -----
         mySever.com   443 TLS 1.2       True
     .NOTES
-        Name:     Test-Protocol
-        Author:   Justin Johns
-        Version:  0.2.0 | Last Edit: 2026-05-22
-        - Version history is captured in repository commit history
+        Status: Stable
     #>
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]

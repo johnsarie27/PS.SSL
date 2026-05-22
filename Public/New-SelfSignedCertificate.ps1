@@ -43,10 +43,7 @@ function New-SelfSignedCertificate {
         PS C:\> New-SelfSignedCertificate -CommonName myDomain.com
         Generates a new self-signed certificate for myDomain.com
     .NOTES
-        Name:      New-SelfSignedCertificate
-        Author:    Justin Johns
-        Version:   0.3.0 | Last Edit: 2026-05-22
-        - Version history is captured in repository commit history
+        Status: Stable
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = '__conf')]
     Param(

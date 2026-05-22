@@ -54,8 +54,7 @@ function Export-CertificateData {
         PS C:\> Export-CertificateData -Path .\fullchain.pem -Data PrivateKey -OutputDirectory .\out
         Writes .\out\PRIVATE.key containing only the private key block.
     .NOTES
-        Name:    Export-CertificateData
-        Author:  Justin Johns
+        Status: Beta
         - Chain extraction is currently capped at the 2nd through 4th
           CERTIFICATE blocks (intermediates plus an optional root). Bundles
           with more than four CERTIFICATE blocks will silently drop the rest.

@@ -38,7 +38,8 @@ function Test-PrivateKeyCertMatch {
         PS C:> Test-PrivateKeyCertMatch -PrivateKeyPath "$outDir\${cn}_PRIVATE.key" -CertificatePath "$outDir\$otherCn.pem"
         Generates two self-signed certificates and tests the private key of the first against both. Only the first test should return True.
     .NOTES
-        General notes
+        Status: Stable
+        References:
         https://man.openbsd.org/openssl.1
     #>
     [CmdletBinding()]

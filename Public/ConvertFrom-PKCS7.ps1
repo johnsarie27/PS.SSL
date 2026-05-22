@@ -16,7 +16,7 @@ function ConvertFrom-PKCS7 {
         PS C:\> ConvertFrom-PKCS7 -Path .\myCert.cer -OutputDirectory .\newFolder
         Converts a PKCS7 formatted certificate to non-PKCS7 format with .crt extension
     .NOTES
-        General notes
+        Status: Stable
     #>
     [CmdletBinding()]
     Param(

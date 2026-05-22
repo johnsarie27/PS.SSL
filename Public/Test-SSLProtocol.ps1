@@ -16,8 +16,8 @@ function Test-SSLProtocol {
         PS C:\> Test-SSLProtocl -ComputerName 'www.mysite.com'
         Tests www.mysite.com for access using various SSL/TLS protocols
     .NOTES
-        General notes
-        Original code from:
+        Status: Stable
+        References:
         https://dscottraynsford.wordpress.com/2016/12/24/test-website-ssl-certificates-continuously-with-powershell-and-pester/
         https://www.sysadmins.lv/blog-en/test-web-server-ssltls-protocol-support-with-powershell.aspx
     #>

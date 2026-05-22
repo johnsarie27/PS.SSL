@@ -28,8 +28,7 @@ function Get-CSRData {
         Print the full openssl -text dump (preserves the pre-3a output format
         for callers that want the original visual review experience).
     .NOTES
-        Name:      Get-CSRData
-        Author:    Justin Johns
+        Status: Beta
         - Field extraction is regex-based against openssl's human output
           because no public .NET CSR-loader exists at PS 7.0 / .NET Core 3.1
           (CertificateRequest.LoadSigningRequest is .NET 7+). Unmatched

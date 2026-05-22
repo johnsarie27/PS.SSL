@@ -26,7 +26,8 @@ function Export-PFX {
         PS C:\> Export-PFX -Password $secStr -KeyPath .\key.key -SignedCSRPath .\cert.crt -RootCAPath .\root.crt
         Creates and exports PFX file from private key, signed certificate, and root CA
     .NOTES
-        General notes
+        Status: Stable
+        References:
         https://man.openbsd.org/openssl.1
     #>
     [CmdletBinding(DefaultParameterSetName = '__nochain')]

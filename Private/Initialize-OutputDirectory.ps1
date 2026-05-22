@@ -24,8 +24,7 @@ function Initialize-OutputDirectory {
     .EXAMPLE
         PS C:\> Initialize-OutputDirectory -Path "$HOME\Desktop\out"
     .NOTES
-        Name:      Initialize-OutputDirectory
-        Author:    Justin Johns
+        Status: Stable
         - Uses `Write-Error -ErrorAction Stop` rather than `throw` to
           stay consistent with the module-wide error-emission convention.
     #>

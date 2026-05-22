@@ -36,11 +36,8 @@ function Invoke-OpenSsl {
         PS C:\> if ($r.ExitCode -eq 0) { 'supported' } else { 'not supported' }
         Use -IgnoreExitCode for probing scenarios where a non-zero exit is meaningful, not fatal.
     .NOTES
-        Name:      Invoke-OpenSsl
-        Author:    Justin Johns
-        Version:   0.1.0 | Last Edit: 2026-05-22
-        - Version history is captured in repository commit history
-        Internal helper. Not exported from the module.
+        Status: Stable
+        - Internal helper. Not exported from the module.
     #>
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
