@@ -7,6 +7,16 @@ BeforeDiscovery {
     $Cmdlets = Get-Command -Module $env:BHProjectName -CommandType 'Cmdlet', 'Function' -ErrorAction 'Stop'
 }
 
+# Guard against a vacuously-green run when the module exports zero commands
+# (e.g., Public/ got emptied or the manifest's FunctionsToExport drifted).
+# Without this, the data-driven 'Describe -ForEach $Cmdlets' below produces
+# zero It blocks and the suite passes.
+Describe 'Module surface' {
+    It 'Exports at least one command' {
+        $Cmdlets.Count | Should -BeGreaterThan 0
+    }
+}
+
 Describe '<_> help' -ForEach $Cmdlets {
     BeforeDiscovery {
         $Common = 'ProgressAction', 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable', 'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable', 'Confirm', 'Whatif'
