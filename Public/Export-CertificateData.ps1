@@ -32,17 +32,7 @@ function Export-CertificateData {
         [System.String] $Path,
 
         [Parameter(Position = 1, HelpMessage = 'Output directory for generated files')]
-        [ValidateScript({
-                if (Test-Path -Path $_ -PathType Leaf) {
-                    Write-Error -Message "OutputDirectory '$_' exists but is a file, not a directory." -ErrorAction Stop
-                }
-                $parent = Split-Path -Path $_ -Parent
-                if ([string]::IsNullOrEmpty($parent)) { $parent = '.' }
-                if (-not (Test-Path -Path $parent -PathType Container)) {
-                    Write-Error -Message "Parent of OutputDirectory does not exist: $parent" -ErrorAction Stop
-                }
-                $true
-            })]
+        [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
         [System.String] $OutputDirectory = "$HOME\Desktop",
 
         [Parameter(Mandatory, Position = 2, HelpMessage = 'Data to export')]
