@@ -47,17 +47,17 @@ function ConvertTo-PEM {
         # SET OUTPUT FILE NAME
         $name = '{0}.pem' -f (Split-Path -Path $PFX -LeafBase)
         Write-Verbose -Message ('Set filename to: {0}' -f $name)
-
-        # CREATE CREDENTIAL OBJECT WITH PASSWORD
-        $creds = [System.Management.Automation.PSCredential]::new('UserName', $Password)
     }
     End {
         # VERIFY SIGNED CERTIFICATE
-        # openssl pkcs12 -in <PFX_PATH> -out <FILE.TXT> -nodes
-        # NOTE: -passin pass:... still exposes the password to process listings.
-        #       Item 2a will migrate this to -passin env:VAR using the helper.
+        # openssl pkcs12 -in <PFX_PATH> -out <FILE.TXT> -nodes -passin env:PSSL_PASSIN
+        # PASS THE PASSWORD VIA AN ENVIRONMENT VARIABLE SCOPED TO THE OPENSSL
+        # CHILD PROCESS - never on argv, never in the parent session - so it
+        # is invisible to peer-process listings, ETW process-start events,
+        # and EDR command-line telemetry.
         $outFile = Join-Path -Path $OutputDirectory -ChildPath $name
-        $passInArg = 'pass:{0}' -f $creds.GetNetworkCredential().Password
-        [System.Void] (Invoke-OpenSsl -ArgumentList @('pkcs12', '-in', $PFX, '-out', $outFile, '-nodes', '-passin', $passInArg))
+        [System.Void] (Invoke-OpenSsl `
+            -ArgumentList @('pkcs12', '-in', $PFX, '-out', $outFile, '-nodes', '-passin', 'env:PSSL_PASSIN') `
+            -EnvironmentVariable @{ PSSL_PASSIN = $Password })
     }
 }
