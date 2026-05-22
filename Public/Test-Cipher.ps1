@@ -21,7 +21,7 @@ function Test-Cipher {
         Name:     Test-Cipher
         Author:   Justin Johns
         Version:  0.1.0 | Last Edit: 2023-12-21
-        - 0.1.0 - Initial version
+        - Version history is captured in repository commit history
         Comments:
         https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html#describe-ssl-policies
     #>

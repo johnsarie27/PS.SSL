@@ -21,7 +21,7 @@ function Test-Protocol {
         Name:     Test-Protocol
         Author:   Justin Johns
         Version:  0.1.0 | Last Edit: 2023-12-21
-        - 0.1.0 - Initial version
+        - Version history is captured in repository commit history
         Comments:
     #>
     [CmdletBinding()]

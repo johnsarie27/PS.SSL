@@ -21,7 +21,7 @@ function Export-CertificateData {
         Name:     Export-CertificateData
         Author:   Justin Johns
         Version:  0.1.0 | Last Edit: 2022-09-30
-        - 0.1.0 - Initial version
+        - Version history is captured in repository commit history
         Comments: <Comment(s)>
         General notes:
     #>

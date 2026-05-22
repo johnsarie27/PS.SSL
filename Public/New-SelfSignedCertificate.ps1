@@ -39,8 +39,7 @@ function New-SelfSignedCertificate {
         Name:      New-SelfSignedCertificate
         Author:    Justin Johns
         Version:   0.3.0 | Last Edit: 2026-05-22
-        - 0.3.0 - (2026-05-22) Added -KeySize parameter (default 4096) and emit -newkey/-sha256 explicitly so output is deterministic regardless of config file.
-        - 0.2.1 - (2025-08-28) Previous version
+        - Version history is captured in repository commit history
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = '__conf')]
     Param(

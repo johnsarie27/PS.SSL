@@ -37,11 +37,7 @@ function New-CertificateSigningRequest {
         Name:      New-CertificateSigningRequest
         Author:    Justin Johns
         Version:   0.3.0 | Last Edit: 2026-05-22
-        - 0.3.0 - (2026-05-22) Removed -Days parameter (CSRs have no validity period; -days is silently ignored by openssl req without -x509). Validity is set by the issuing CA at signing time. (Breaking change.) Added -KeySize parameter (default 4096) and emit -newkey/-sha256 explicitly so output is deterministic regardless of config file.
-        - 0.2.1 - (2024-04-14) Fixed bug
-        - 0.2.0 - (2024-03-08) Fixed SupportsShouldProcess, updated SAN input, renamed function
-        - 0.1.1 - (2022-06-20) Added SupportsShouldProcess
-        - 0.1.0 - Initial versions
+        - Version history is captured in repository commit history
         General notes
         Example commands
         openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
