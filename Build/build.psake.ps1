@@ -1,32 +1,34 @@
 # PSake makes variables declared here available in other scriptblocks
+# Note: variables are set via Set-Variable rather than `$x = ...` so that
+# PSScriptAnalyzer's PSUseDeclaredVarsMoreThanAssignments rule does not
+# false-positive on them. PSSA can't follow psake's runtime hoisting of
+# Properties-block variables into Task scriptblocks; Set-Variable is the
+# documented psake workaround.
 Properties {
-    $ProjectRoot = $env:BHProjectPath
+    Set-Variable -Name 'ProjectRoot' -Value $env:BHProjectPath
     if (-not $ProjectRoot) {
-        $ProjectRoot = $PSScriptRoot
+        Set-Variable -Name 'ProjectRoot' -Value $PSScriptRoot
     }
 
-    $Timestamp = Get-Date -UFormat '%Y%m%d-%H%M%S'
-    $PSVersion = $PSVersionTable.PSVersion.Major
-    $lines = '----------------------------------------------------------------------'
+    Set-Variable -Name 'Timestamp' -Value (Get-Date -UFormat '%Y%m%d-%H%M%S')
+    Set-Variable -Name 'lines' -Value '----------------------------------------------------------------------'
 
     # Pester
-    $TestScripts = Get-ChildItem "$ProjectRoot/Tests/*/*Tests.ps1"
-    $TestFile = "Test-Unit_$($TimeStamp).xml"
+    Set-Variable -Name 'TestScripts' -Value (Get-ChildItem "$ProjectRoot/Tests/*/*Tests.ps1")
+    Set-Variable -Name 'TestFile' -Value "Test-Unit_$($Timestamp).xml"
 
     # Script Analyzer
-    [ValidateSet('Error', 'Warning', 'Any', 'None')]
-    $ScriptAnalysisFailBuildOnSeverityLevel = 'Error'
-    $ScriptAnalyzerSettingsPath = "$ProjectRoot/Build/PSScriptAnalyzerSettings.psd1"
+    # Valid values: 'Error', 'Warning', 'Any', 'None'.
+    Set-Variable -Name 'ScriptAnalysisFailBuildOnSeverityLevel' -Value 'Error'
+    Set-Variable -Name 'ScriptAnalyzerSettingsPath' -Value "$ProjectRoot/Build/PSScriptAnalyzerSettings.psd1"
 
     # Build
-    $ArtifactFolder = Join-Path -Path $ProjectRoot -ChildPath 'Artifacts'
+    Set-Variable -Name 'ArtifactFolder' -Value (Join-Path -Path $ProjectRoot -ChildPath 'Artifacts')
 
     # Staging
-    $StagingFolder = Join-Path -Path $ProjectRoot -ChildPath 'Staging'
-    $StagingModulePath = Join-Path -Path $StagingFolder -ChildPath $env:BHProjectName
-    #$StagingModulePath = Join-Path -Path $StagingFolder -ChildPath $ProjectName
-    $StagingModuleManifestPath = Join-Path -Path $StagingModulePath -ChildPath "$($env:BHProjectName).psd1"
-    #$StagingModuleManifestPath = Join-Path -Path $StagingModulePath -ChildPath "$($ProjectName).psd1"
+    Set-Variable -Name 'StagingFolder' -Value (Join-Path -Path $ProjectRoot -ChildPath 'Staging')
+    Set-Variable -Name 'StagingModulePath' -Value (Join-Path -Path $StagingFolder -ChildPath $env:BHProjectName)
+    Set-Variable -Name 'StagingModuleManifestPath' -Value (Join-Path -Path $StagingModulePath -ChildPath "$($env:BHProjectName).psd1")
 }
 
 # Define top-level tasks
@@ -58,8 +60,13 @@ Task 'Setup' -depends 'Init' {
     }
 }
 
-# Create a single .psm1 module file containing all functions
-# Copy new module and other supporting files to Staging folder
+# Stage the module layout for packaging.
+# Copies the public functions, manifest, root module, README, and (when
+# present) private helpers into $StagingModulePath. The module is shipped
+# as the original multi-file layout rather than being combined into a
+# single .psm1 - the loader in PS.SSL.psm1 dot-sources each file at
+# import time, which keeps file-level debugger breakpoints and stack
+# traces meaningful for consumers.
 Task 'CombineFunctionsAndStage' -depends 'Setup' {
     $lines
 
@@ -67,15 +74,7 @@ Task 'CombineFunctionsAndStage' -depends 'Setup' {
     New-Item -Path $StagingFolder -ItemType 'Directory' -Force | Out-String | Write-Verbose
     New-Item -Path $StagingModulePath -ItemType 'Directory' -Force | Out-String | Write-Verbose
 
-    # Get public and private function files
-    #$publicFunctions = @( Get-ChildItem -Path "$env:BHModulePath\Public\*.ps1" -Recurse -ErrorAction 'SilentlyContinue' )
-    #$privateFunctions = @( Get-ChildItem -Path "$env:BHModulePath\Private\*.ps1" -Recurse -ErrorAction 'SilentlyContinue' )
-
-    # Combine functions into a single .psm1 module
-    #$combinedModulePath = Join-Path -Path $StagingModulePath -ChildPath "$($env:BHProjectName).psm1"
-    #@($publicFunctions + $privateFunctions) | Get-Content | Add-Content -Path $combinedModulePath
-
-    # Copy other required folders and files.
+    # Copy required folders and files.
     # 'Private' is optional (no private helpers yet) so it is skipped when
     # absent. All other entries are required; an empty required directory is
     # treated as a build failure because it usually means files were lost or a
@@ -102,9 +101,6 @@ Task 'CombineFunctionsAndStage' -depends 'Setup' {
 
     $pathsToCopy = $requiredPaths + ($optionalPaths | Where-Object { Test-Path -Path $_ })
     Copy-Item -Path $pathsToCopy -Destination $StagingModulePath -Recurse
-
-    # Copy existing manifest
-    #Copy-Item -Path $env:BHPSModuleManifest -Destination $StagingModulePath -Recurse
 }
 
 # Import new module
@@ -169,8 +165,6 @@ Task 'Test' -depends 'ImportStagingModule' {
 
     $TestResults = Invoke-Pester -Configuration $PesterConfig
 
-    #$TestResults = Invoke-Pester -Script $TestScripts -PassThru -OutputFormat 'NUnitXml' -OutputFile $TestFilePath -PesterOption @{IncludeVSCodeMarker = $true }
-
     # Fail build if any tests fail
     if ($TestResults.FailedCount -gt 0) {
         Write-Error "Failed '$($TestResults.FailedCount)' tests, build failed"
@@ -199,7 +193,7 @@ Task 'CreateBuildArtifact' -depends 'Init' {
     try {
         $releaseFilename = "$($env:BHProjectName)-v$($manifestVersion.ToString()).zip"
         $releasePath = Join-Path -Path $ArtifactFolder -ChildPath $releaseFilename
-        Write-Output "Creating release artifact [$releasePath] using manifest version [$manifestVersion]" -ForegroundColor 'Yellow'
+        Write-Output "Creating release artifact [$releasePath] using manifest version [$manifestVersion]"
         Compress-Archive -Path "$StagingFolder/*" -DestinationPath $releasePath -Force -Verbose -ErrorAction 'Stop'
     }
     catch {
