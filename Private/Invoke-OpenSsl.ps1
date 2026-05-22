@@ -47,33 +47,57 @@ function Invoke-OpenSsl {
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
 
+        # FAIL FAST IF OPENSSL IS NOT ON PATH. THIS IS A TERMINATING ERROR
+        # SO CALLERS DON'T NEED TO RE-CHECK; SURFACES A CLEAR DIAGNOSTIC
+        # INSTEAD OF A CRYPTIC "FILE NOT FOUND" FROM Process.Start().
         if (-not (Get-Command -Name 'openssl' -CommandType Application -ErrorAction SilentlyContinue)) {
             Write-Error -Message "'openssl' was not found on PATH." -Category ObjectNotFound -ErrorAction Stop
         }
     }
     Process {
+        # BUILD THE PROCESS START INFO. UseShellExecute=$false IS REQUIRED
+        # IN ORDER TO REDIRECT STDOUT/STDERR; CreateNoWindow=$true SUPPRESSES
+        # THE TRANSIENT CONSOLE WINDOW THAT OTHERWISE FLASHES ON WINDOWS.
         $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
         $startInfo.FileName               = 'openssl'
         $startInfo.RedirectStandardOutput = $true
         $startInfo.RedirectStandardError  = $true
         $startInfo.UseShellExecute        = $false
         $startInfo.CreateNoWindow         = $true
+
+        # POPULATE ArgumentList ONE ENTRY AT A TIME. PowerShell 7+ uses the
+        # collection form (not the legacy Arguments string), which lets the
+        # runtime handle argv quoting per-OS. Pre-joining or quoting the
+        # caller-supplied values would re-introduce the very injection and
+        # space-fragmentation bugs this helper exists to eliminate.
         foreach ($argument in $ArgumentList) { $startInfo.ArgumentList.Add($argument) }
 
         $process = [System.Diagnostics.Process]::new()
         $process.StartInfo = $startInfo
         try {
             [System.Void] $process.Start()
+
+            # READ BOTH STREAMS BEFORE WaitForExit() TO AVOID DEADLOCKING ON
+            # COMMANDS THAT FILL EITHER PIPE'S OS BUFFER (typical limit ~4KB
+            # on Windows). A WaitForExit() before draining the pipes would
+            # hang any openssl invocation that emits more than that.
             $standardOutput = $process.StandardOutput.ReadToEnd()
             $standardError  = $process.StandardError.ReadToEnd()
             $process.WaitForExit()
 
+            # ALWAYS BUILD THE RESULT OBJECT - EVEN ON FAILURE - SO THE
+            # -IgnoreExitCode PATH HAS SOMETHING TO RETURN AND THE ERROR
+            # MESSAGE BELOW CAN INCLUDE THE STDERR TEXT.
             $result = [PSCustomObject] @{
                 ExitCode = $process.ExitCode
                 StdOut   = $standardOutput
                 StdErr   = $standardError
             }
 
+            # DEFAULT BEHAVIOR: NON-ZERO EXIT IS TERMINATING. Including the
+            # trimmed stderr in the message preserves diagnostics that were
+            # previously lost by Start-Process -NoNewWindow (which silently
+            # dropped the openssl error text).
             if ($process.ExitCode -ne 0 -and -not $IgnoreExitCode) {
                 Write-Error -Message ("openssl exited with code {0}: {1}" -f $process.ExitCode, $standardError.Trim()) -Category InvalidResult -ErrorAction Stop
             }
@@ -81,6 +105,9 @@ function Invoke-OpenSsl {
             $result
         }
         finally {
+            # ALWAYS DISPOSE - Process HOLDS UNMANAGED HANDLES (pipes, the
+            # win32 process handle) THAT WILL LEAK UNTIL THE GC FINALIZER
+            # RUNS IF NOT EXPLICITLY RELEASED.
             $process.Dispose()
         }
     }
