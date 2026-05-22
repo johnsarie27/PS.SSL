@@ -24,6 +24,8 @@ function New-CertificateSigningRequest {
         Email Address
     .PARAMETER SubjectAlternativeName
         Subject Alternative Name (SAN)
+    .PARAMETER KeySize
+        RSA key size in bits (2048, 3072, or 4096; default is 4096). Emitted explicitly to openssl so the result is deterministic regardless of the config template contents.
     .INPUTS
         None.
     .OUTPUTS
@@ -35,7 +37,7 @@ function New-CertificateSigningRequest {
         Name:      New-CertificateSigningRequest
         Author:    Justin Johns
         Version:   0.3.0 | Last Edit: 2026-05-22
-        - 0.3.0 - (2026-05-22) Removed -Days parameter (CSRs have no validity period; -days is silently ignored by openssl req without -x509). Validity is set by the issuing CA at signing time. (Breaking change.)
+        - 0.3.0 - (2026-05-22) Removed -Days parameter (CSRs have no validity period; -days is silently ignored by openssl req without -x509). Validity is set by the issuing CA at signing time. (Breaking change.) Added -KeySize parameter (default 4096) and emit -newkey/-sha256 explicitly so output is deterministic regardless of config file.
         - 0.2.1 - (2024-04-14) Fixed bug
         - 0.2.0 - (2024-03-08) Fixed SupportsShouldProcess, updated SAN input, renamed function
         - 0.1.1 - (2022-06-20) Added SupportsShouldProcess
@@ -93,7 +95,11 @@ function New-CertificateSigningRequest {
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN)')]
         [Alias('SAN')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov|info)$')]
-        [System.String[]] $SubjectAlternativeName
+        [System.String[]] $SubjectAlternativeName,
+
+        [Parameter(HelpMessage = 'RSA key size in bits (default 4096)')]
+        [ValidateSet(2048, 3072, 4096)]
+        [System.Int32] $KeySize = 4096
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
@@ -176,10 +182,12 @@ function New-CertificateSigningRequest {
         # NOTE: -days is intentionally NOT passed here. `openssl req` ignores it
         # unless -x509 is also specified, and CSRs by design carry no validity
         # period; the issuing CA sets validity at signing time.
+        # -newkey/-sha256 are emitted explicitly so the result is deterministic
+        # even when a custom -ConfigFile omits default_bits/default_md.
         $sslParams = @{
             FilePath     = 'openssl' # .exe
             ArgumentList = @(
-                'req -new -nodes'
+                'req -new -nodes -newkey rsa:{0} -sha256' -f $KeySize
                 '-config {0}' -f $configPath
                 '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
                 '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))

@@ -26,6 +26,8 @@ function New-SelfSignedCertificate {
         Email Address
     .PARAMETER SubjectAlternativeName
         Subject Alternative Name (SAN)
+    .PARAMETER KeySize
+        RSA key size in bits (2048, 3072, or 4096; default is 4096). Emitted explicitly to openssl so the result is deterministic regardless of the config template contents.
     .INPUTS
         None.
     .OUTPUTS
@@ -36,9 +38,9 @@ function New-SelfSignedCertificate {
     .NOTES
         Name:      New-SelfSignedCertificate
         Author:    Justin Johns
-        Version:   0.2.1 | Last Edit: 2025-08-28
-        Comments: <Comment(s)>
-        General notes
+        Version:   0.3.0 | Last Edit: 2026-05-22
+        - 0.3.0 - (2026-05-22) Added -KeySize parameter (default 4096) and emit -newkey/-sha256 explicitly so output is deterministic regardless of config file.
+        - 0.2.1 - (2025-08-28) Previous version
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = '__conf')]
     Param(
@@ -91,7 +93,11 @@ function New-SelfSignedCertificate {
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN)')]
         [Alias('SAN')]
         [ValidatePattern('^[\w\.-]+\.(com|org|gov|info)$')]
-        [System.String[]] $SubjectAlternativeName
+        [System.String[]] $SubjectAlternativeName,
+
+        [Parameter(HelpMessage = 'RSA key size in bits (default 4096)')]
+        [ValidateSet(2048, 3072, 4096)]
+        [System.Int32] $KeySize = 4096
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
@@ -167,15 +173,13 @@ function New-SelfSignedCertificate {
         Write-Verbose -Message ('New file name: {0}' -f $fileName)
 
         # SET OPENSSL PARAMETERS
-        # openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
-        # USING THE "-legacy" PARAMETER WILL MAINTAIN COMPATABILITY WITH CERTAIN SERVERS THAT DO NOT YET SUPPORT
-        # THE LATEST CIPHERS OR PROTOCOLS
-        # EXAMPLE> openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
-        # -newkey rsa:4096 and -sha256 are in the default template
+        # openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
+        # -newkey/-sha256 are emitted explicitly so output is deterministic
+        # even when a custom -ConfigFile omits default_bits/default_md.
         $sslParams = @{
             FilePath     = 'openssl'
             ArgumentList = @(
-                'req -new -x509 -nodes -days {0}' -f $Days
+                'req -new -x509 -nodes -newkey rsa:{0} -sha256 -days {1}' -f $KeySize, $Days
                 '-config {0}' -f $configPath
                 '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
                 '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.pem' -f $fileName))
