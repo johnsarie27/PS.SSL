@@ -62,6 +62,7 @@ function Invoke-OpenSsl {
         $startInfo.FileName               = 'openssl'
         $startInfo.RedirectStandardOutput = $true
         $startInfo.RedirectStandardError  = $true
+        $startInfo.RedirectStandardInput  = $true
         $startInfo.UseShellExecute        = $false
         $startInfo.CreateNoWindow         = $true
 
@@ -76,6 +77,22 @@ function Invoke-OpenSsl {
         $process.StartInfo = $startInfo
         try {
             [System.Void] $process.Start()
+
+            # CLOSE STDIN IMMEDIATELY SO COMMANDS THAT WOULD OTHERWISE BLOCK
+            # WAITING FOR INPUT EXIT CLEANLY. Two cases this addresses:
+            #   1. `openssl s_client` after a successful handshake reads from
+            #      stdin and stays open until EOF; without this close the
+            #      Test-Protocol / Test-Cipher Supported=true path would hang.
+            #   2. `openssl req -new` with a -config file that omits
+            #      `prompt = no` would otherwise prompt for DN fields on the
+            #      console - turning an unattended call into an interactive
+            #      hang. With stdin closed it fails fast with a clear stderr
+            #      ("No value provided for Subject Attribute CN") which the
+            #      helper surfaces in the terminating error message.
+            # No current module call site feeds stdin, so unconditional close
+            # is safe. If a future caller needs to pipe data in, add an opt-out
+            # switch rather than removing this line.
+            $process.StandardInput.Close()
 
             # READ BOTH STREAMS BEFORE WaitForExit() TO AVOID DEADLOCKING ON
             # COMMANDS THAT FILL EITHER PIPE'S OS BUFFER (typical limit ~4KB
