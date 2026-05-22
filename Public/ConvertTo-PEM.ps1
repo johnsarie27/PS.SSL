@@ -54,21 +54,10 @@ function ConvertTo-PEM {
     End {
         # VERIFY SIGNED CERTIFICATE
         # openssl pkcs12 -in <PFX_PATH> -out <FILE.TXT> -nodes
-        $sslParams = @{
-            FilePath     = 'openssl' # .exe
-            ArgumentList = @(
-                'pkcs12'
-                '-in {0}' -f $PFX
-                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath $name)
-                '-nodes'
-                '-passin pass:{0}' -f $creds.GetNetworkCredential().Password
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
-        }
-        $proc = Start-Process @sslParams
-
-        if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
+        # NOTE: -passin pass:... still exposes the password to process listings.
+        #       Item 2a will migrate this to -passin env:VAR using the helper.
+        $outFile = Join-Path -Path $OutputDirectory -ChildPath $name
+        $passInArg = 'pass:{0}' -f $creds.GetNetworkCredential().Password
+        [System.Void] (Invoke-OpenSsl -ArgumentList @('pkcs12', '-in', $PFX, '-out', $outFile, '-nodes', '-passin', $passInArg))
     }
 }
