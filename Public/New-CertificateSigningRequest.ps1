@@ -60,7 +60,9 @@ function New-CertificateSigningRequest {
 
         [Parameter(Mandatory, ParameterSetName = '__input', HelpMessage = 'Common Name (CN)')]
         [Alias('CN')]
-        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
+        # TLD allow-list reflects the domain scope this module is deployed against.
+        # Update both CommonName and SubjectAlternativeName together if the policy changes.
+        [ValidatePattern('^[\w\.-]+\.(com|org|gov|info)$')]
         [System.String] $CommonName,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Country Name (C)')]
@@ -94,6 +96,7 @@ function New-CertificateSigningRequest {
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN)')]
         [Alias('SAN')]
+        # TLD allow-list must match CommonName above.
         [ValidatePattern('^[\w\.-]+\.(com|org|gov|info)$')]
         [System.String[]] $SubjectAlternativeName,
 
