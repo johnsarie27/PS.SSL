@@ -54,8 +54,42 @@ function Test-SSLProtocol {
                 $netStream = New-Object System.Net.Sockets.NetworkStream($socket, $true)
                 $sslStream = New-Object System.Net.Security.SslStream($netStream, $true)
                 $sslStream.AuthenticateAsClient($ComputerName, $null, $pn, $false )
-                $remoteCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2] $sslStream.RemoteCertificate
-                $protocolStatus['KeyLength'] = $remoteCertificate.PublicKey.Key.KeySize
+                # Build a real X509Certificate2 from the raw cert bytes. The cast
+                # [X509Certificate2] $sslStream.RemoteCertificate is not a true upcast
+                # (RemoteCertificate is typed as X509Certificate) and would leave the
+                # algorithm-specific Get*PublicKey() methods unavailable.
+                $remoteCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($sslStream.RemoteCertificate)
+
+                # Resolve the public key size via algorithm-specific accessors on the
+                # PublicKey object. The legacy PublicKey.Key getter is deprecated and
+                # throws NotSupportedException for ECDSA/DSA certs in .NET 5+, which
+                # previously caused the whole protocol probe to fall into the catch
+                # block for non-RSA endpoints. The Get*PublicKey() methods on
+                # X509Certificate2 itself are C# extension methods (not visible to
+                # PowerShell instance-method dispatch), so we call them on PublicKey,
+                # where they are real instance methods since .NET 5.
+                $keySize = $null
+                $pk = $remoteCertificate.PublicKey
+                $rsa = $pk.GetRSAPublicKey()
+                if ($rsa) {
+                    $keySize = $rsa.KeySize
+                    $rsa.Dispose()
+                }
+                else {
+                    $ecdsa = $pk.GetECDsaPublicKey()
+                    if ($ecdsa) {
+                        $keySize = $ecdsa.KeySize
+                        $ecdsa.Dispose()
+                    }
+                    else {
+                        $dsa = $pk.GetDSAPublicKey()
+                        if ($dsa) {
+                            $keySize = $dsa.KeySize
+                            $dsa.Dispose()
+                        }
+                    }
+                }
+                $protocolStatus['KeyLength'] = $keySize
                 $protocolStatus['SignatureAlgorithm'] = $remoteCertificate.SignatureAlgorithm.FriendlyName
                 $protocolStatus['KeyExchange'] = $sslStream.KeyExchangeAlgorithm
                 $protocolStatus['HashAlgorithm'] = $sslStream.HashAlgorithm
