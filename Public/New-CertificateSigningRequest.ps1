@@ -173,7 +173,7 @@ function New-CertificateSigningRequest {
         if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
         Write-Verbose -Message ('New file name: {0}' -f $fileName)
 
-        # SET OPENSSL PARAMETERS
+        # SET OPENSSL ARGUMENTS
         # openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
         # USING THE "-legacy" PARAMETER WILL MAINTAIN COMPATABILITY WITH CERTAIN SERVERS THAT DO NOT YET SUPPORT
         # THE LATEST CIPHERS OR PROTOCOLS
@@ -183,30 +183,22 @@ function New-CertificateSigningRequest {
         # period; the issuing CA sets validity at signing time.
         # -newkey/-sha256 are emitted explicitly so the result is deterministic
         # even when a custom -ConfigFile omits default_bits/default_md.
-        $sslParams = @{
-            FilePath     = 'openssl' # .exe
-            ArgumentList = @(
-                'req -new -nodes -newkey rsa:{0} -sha256' -f $KeySize
-                '-config {0}' -f $configPath
-                '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
-                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
-        }
+        $keyoutPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName)
+        $csrOutPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName)
+        $opensslArgs = @(
+            'req', '-new', '-nodes',
+            '-newkey', ('rsa:{0}' -f $KeySize),
+            '-sha256',
+            '-config', $configPath,
+            '-keyout', $keyoutPath,
+            '-out', $csrOutPath
+        )
 
         # SHOULD PROCESS
         if ($PSCmdlet.ShouldProcess($OutputDirectory, "Create Files")) {
 
             # INVOKE OPENSSL
-            $proc = Start-Process @sslParams
-
-            # CHECK FOR ERRORS
-            if ($proc.ExitCode -NE 0) {
-                # OUTPUT ERROR
-                Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode)
-            }
+            [System.Void] (Invoke-OpenSsl -ArgumentList $opensslArgs)
         }
     }
 }
