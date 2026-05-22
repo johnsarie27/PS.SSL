@@ -36,7 +36,16 @@ function Test-Cipher {
         [System.Int32] $Port = 443,
 
         [Parameter(Mandatory = $true, Position = 2, HelpMessage = 'Cipher')]
-        [ValidateScript({ $_ -in ((openssl ciphers) -split ':') })]
+        [ValidateScript({
+            if (-not (Get-Command -Name 'openssl' -CommandType Application -ErrorAction SilentlyContinue)) {
+                Write-Error -Message "'openssl' was not found on PATH; cannot validate cipher." -Category ObjectNotFound -ErrorAction Stop
+            }
+            $supported = (& openssl ciphers 2>$null) -split ':'
+            if ($_ -notin $supported) {
+                Write-Error -Message ("Cipher '{0}' is not in the local openssl cipher list. Run 'openssl ciphers' to view supported values." -f $_) -Category InvalidArgument -ErrorAction Stop
+            }
+            $true
+        })]
         [System.String] $Cipher
     )
     Begin {
