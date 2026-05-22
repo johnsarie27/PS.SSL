@@ -25,18 +25,7 @@ function Get-CertificateData {
     Process {
         # VERIFY SIGNED CERTIFICATE
         # openssl x509 -text -noout -in <Public_Key_Signed>.crt
-        $sslParams = @{
-            FilePath     = 'openssl' # .exe
-            ArgumentList = @(
-                'x509 -text -noout'
-                '-in {0}' -f $Path
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
-        }
-        $proc = Start-Process @sslParams
-
-        if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
+        $result = Invoke-OpenSsl -ArgumentList @('x509', '-text', '-noout', '-in', $Path)
+        $result.StdOut
     }
 }
