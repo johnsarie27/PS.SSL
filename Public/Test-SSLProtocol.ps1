@@ -47,10 +47,10 @@ function Test-SSLProtocol {
 
         foreach ($pn in $protoNames) {
 
-            $socket = New-Object System.Net.Sockets.Socket([System.Net.Sockets.SocketType]::Stream, [System.Net.Sockets.ProtocolType]::Tcp)
-            $socket.Connect($ComputerName, $Port)
-
+            $socket = $null; $netStream = $null; $sslStream = $null
             try {
+                $socket = New-Object System.Net.Sockets.Socket([System.Net.Sockets.SocketType]::Stream, [System.Net.Sockets.ProtocolType]::Tcp)
+                $socket.Connect($ComputerName, $Port)
                 $netStream = New-Object System.Net.Sockets.NetworkStream($socket, $true)
                 $sslStream = New-Object System.Net.Security.SslStream($netStream, $true)
                 $sslStream.AuthenticateAsClient($ComputerName, $null, $pn, $false )
@@ -64,10 +64,15 @@ function Test-SSLProtocol {
             }
             catch {
                 $protocolStatus.Add($pn, $false)
+                Write-Verbose -Message ('Protocol {0} unavailable: {1}' -f $pn, $_.Exception.Message)
             }
             finally {
-                $socket.Close()
-                $sslStream.Close()
+                # Dispose in reverse construction order. NetworkStream owns the socket
+                # (ownsSocket: $true) once constructed, so only close the socket directly
+                # when the stream wrapper was never created.
+                if ($sslStream)  { $sslStream.Dispose() }
+                if ($netStream)  { $netStream.Dispose() }
+                elseif ($socket) { $socket.Close() }
             }
         }
 
