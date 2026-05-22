@@ -25,18 +25,7 @@ function Get-CSRData {
     Process {
         # VERIFY UNSIGNED CSR
         # openssl req -text -noout -verify -in company_san.csr
-        $sslParams = @{
-            FilePath     = 'openssl' # .exe
-            ArgumentList = @(
-                'req -text -noout -verify'
-                '-in {0}' -f $CSR
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
-        }
-        $proc = Start-Process @sslParams
-
-        if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
+        $result = Invoke-OpenSsl -ArgumentList @('req', '-text', '-noout', '-verify', '-in', $CSR)
+        $result.StdOut
     }
 }
