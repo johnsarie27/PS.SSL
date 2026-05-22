@@ -1,29 +1,66 @@
 function Export-CertificateData {
     <#
     .SYNOPSIS
-        Short description
+        Split a combined PEM bundle into separate certificate, chain, and
+        private key files.
     .DESCRIPTION
-        Long description
+        Reads a PEM file that contains a private key followed by one or more
+        concatenated certificates (typical of a fullchain export) and writes
+        the requested portion to a new PEM file in -OutputDirectory.
+
+        The function does not invoke openssl; it scans the input line-by-line
+        for the standard PEM begin/end markers and copies the matching block
+        verbatim, preserving the original encoding.
+
+        Expected layout of the input PEM:
+          -----BEGIN PRIVATE KEY-----   (optional, required for -Data PrivateKey)
+          ...
+          -----END PRIVATE KEY-----
+          -----BEGIN CERTIFICATE-----   (leaf certificate; required for -Data Certificate)
+          ...
+          -----END CERTIFICATE-----
+          -----BEGIN CERTIFICATE-----   (chain certs; required for -Data Chain)
+          ...
+          -----END CERTIFICATE-----
+          ...
+
+        The output filename is fixed per -Data value and is written under
+        -OutputDirectory:
+          Certificate -> certificate.pem  (first CERTIFICATE block)
+          Chain       -> chain.pem        (2nd through 4th CERTIFICATE blocks, concatenated)
+          PrivateKey  -> PRIVATE.key      (PRIVATE KEY block)
     .PARAMETER Path
-        Path to PEM file
+        Path to a PEM file. Must exist and have a .pem extension.
     .PARAMETER OutputDirectory
-        Output directory for Certificate Data
+        Directory the split file will be written into. Created if missing.
+        Defaults to the current user's Desktop.
     .PARAMETER Data
-        Data to export
+        Which portion of the bundle to extract. One of:
+          Certificate -- the leaf certificate (first CERTIFICATE block)
+          Chain       -- the chain certificates (2nd through 4th CERTIFICATE blocks)
+          PrivateKey  -- the unencrypted private key (PRIVATE KEY block)
     .INPUTS
-        None.
+        None. This function does not accept pipeline input.
     .OUTPUTS
-        None.
+        None. The function writes a file to -OutputDirectory as a side effect.
     .EXAMPLE
-        PS C:\> Export-CertificateData -Path C:\cert.pem -Data Chain
-        Export the certificate chain for SSL certificate
+        PS C:\> Export-CertificateData -Path .\fullchain.pem -Data Certificate -OutputDirectory .\out
+        Writes .\out\certificate.pem containing only the leaf certificate from fullchain.pem.
+    .EXAMPLE
+        PS C:\> Export-CertificateData -Path .\fullchain.pem -Data Chain -OutputDirectory .\out
+        Writes .\out\chain.pem containing the intermediate and root certificates
+        (up to three) concatenated in the original order.
+    .EXAMPLE
+        PS C:\> Export-CertificateData -Path .\fullchain.pem -Data PrivateKey -OutputDirectory .\out
+        Writes .\out\PRIVATE.key containing only the private key block.
     .NOTES
-        Name:     Export-CertificateData
-        Author:   Justin Johns
-        Version:  0.1.0 | Last Edit: 2022-09-30
-        - Version history is captured in repository commit history
-        Comments: <Comment(s)>
-        General notes:
+        Name:    Export-CertificateData
+        Author:  Justin Johns
+        - Chain extraction is currently capped at the 2nd through 4th
+          CERTIFICATE blocks (intermediates plus an optional root). Bundles
+          with more than four CERTIFICATE blocks will silently drop the rest.
+        - Output filenames are fixed and will overwrite any existing file of
+          the same name in -OutputDirectory.
     #>
     [CmdletBinding()]
     Param(
