@@ -16,6 +16,14 @@ function Invoke-OpenSsl {
     .PARAMETER IgnoreExitCode
         Return the result object even when openssl exits non-zero. Callers must
         inspect the ExitCode property themselves.
+    .PARAMETER EnvironmentVariable
+        Dictionary of environment variables to set on the openssl child process
+        only. Use this to hand sensitive values (e.g. PFX passwords) to openssl
+        via -passin env:VAR / -passout env:VAR instead of pass:..., which would
+        place the secret on the command line where it is visible to process
+        listings, EDR telemetry, and audit logs. SecureString values are
+        unwrapped just-in-time inside the helper. The variables are NOT
+        propagated to the parent PowerShell session.
     .INPUTS
         None.
     .OUTPUTS
@@ -42,7 +50,10 @@ function Invoke-OpenSsl {
         [System.String[]] $ArgumentList,
 
         [Parameter(HelpMessage = 'Return non-zero exits as data instead of a terminating error')]
-        [System.Management.Automation.SwitchParameter] $IgnoreExitCode
+        [System.Management.Automation.SwitchParameter] $IgnoreExitCode,
+
+        [Parameter(HelpMessage = 'Environment variables to set on the openssl child process only')]
+        [System.Collections.IDictionary] $EnvironmentVariable
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
@@ -73,9 +84,42 @@ function Invoke-OpenSsl {
         # space-fragmentation bugs this helper exists to eliminate.
         foreach ($argument in $ArgumentList) { $startInfo.ArgumentList.Add($argument) }
 
-        $process = [System.Diagnostics.Process]::new()
-        $process.StartInfo = $startInfo
+        # APPLY PER-INVOCATION ENVIRONMENT VARIABLES. ProcessStartInfo.Environment
+        # is seeded from the parent's environment when first accessed; mutating
+        # it here affects ONLY the child openssl process and never the
+        # PowerShell session. This is how -passin env:VAR / -passout env:VAR
+        # receive secrets without exposing them on argv (which is readable by
+        # peer processes via Get-Process / ETW / EDR telemetry). On modern
+        # Windows a process environment is not readable by non-admin peer
+        # users, so env: is strictly better than pass: for credential handoff.
+        #
+        # SecureString values are unwrapped via SecureStringToBSTR. The BSTR
+        # is tracked in $unwrappedSecureStrings and zeroed+freed in the outer
+        # finally{} so the plaintext is wiped from unmanaged memory as soon
+        # as openssl has consumed it. The managed string stored on the
+        # ProcessStartInfo.Environment dictionary is the only remaining copy
+        # at that point; it lives until the next GC cycle.
+        $unwrappedSecureStrings = [System.Collections.Generic.List[System.IntPtr]]::new()
+        $process = $null
         try {
+            if ($PSBoundParameters.ContainsKey('EnvironmentVariable')) {
+                foreach ($entry in $EnvironmentVariable.GetEnumerator()) {
+                    $name  = [System.String] $entry.Key
+                    $value = $entry.Value
+                    if ($value -is [System.Security.SecureString]) {
+                        $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($value)
+                        $unwrappedSecureStrings.Add($bstr)
+                        $startInfo.Environment[$name] = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+                    }
+                    else {
+                        $startInfo.Environment[$name] = [System.String] $value
+                    }
+                }
+            }
+
+            $process = [System.Diagnostics.Process]::new()
+            $process.StartInfo = $startInfo
+
             [System.Void] $process.Start()
 
             # CLOSE STDIN IMMEDIATELY SO COMMANDS THAT WOULD OTHERWISE BLOCK
@@ -122,10 +166,19 @@ function Invoke-OpenSsl {
             $result
         }
         finally {
+            # ZERO AND FREE EVERY UNWRAPPED BSTR. ZeroFreeBSTR overwrites the
+            # unmanaged buffer with zeros before releasing it so the plaintext
+            # password cannot be recovered from a process dump after this
+            # invocation returns. Done unconditionally - including on error
+            # paths - to guarantee no leak across exception boundaries.
+            foreach ($bstr in $unwrappedSecureStrings) {
+                [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+            }
+
             # ALWAYS DISPOSE - Process HOLDS UNMANAGED HANDLES (pipes, the
             # win32 process handle) THAT WILL LEAK UNTIL THE GC FINALIZER
             # RUNS IF NOT EXPLICITLY RELEASED.
-            $process.Dispose()
+            if ($null -ne $process) { $process.Dispose() }
         }
     }
 }
