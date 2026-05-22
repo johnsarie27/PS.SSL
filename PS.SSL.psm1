@@ -33,31 +33,7 @@ foreach ( $directory in @('Public', 'Private') ) {
     foreach ( $fn in (Get-ChildItem -Path $dirPath -Filter '*.ps1' -File) ) { . $fn.FullName }
 }
 
-# VARIABLES
-New-Variable -Name 'CSR_Template' -Option ReadOnly -Value @(
-    '[req]'
-    'distinguished_name = req_distinguished_name'
-    'req_extensions = v3_req'
-    'default_bits = 4096'
-    'default_md = sha256'
-    'encrypt_key = no'
-    'prompt = no'
-    '[req_distinguished_name]'
-    'C = #C#'
-    'ST = #ST#'
-    'L = #L#'
-    'O = #O#'
-    'OU = #OU#'
-    'emailAddress = "#E#"'
-    'CN = #CN#'
-    '[v3_req]'
-    'keyUsage = keyEncipherment, dataEncipherment'
-    'extendedKeyUsage = serverAuth'
-    'subjectAltName = @alt_names'
-    '[alt_names]'
-)
-
 # EXPORT MEMBERS
 # THESE ARE SPECIFIED IN THE MODULE MANIFEST AND THEREFORE DON'T NEED TO BE LISTED HERE
 #Export-ModuleMember -Function *
-Export-ModuleMember -Variable 'CSR_Template' -Alias 'New-CSR'
+Export-ModuleMember -Alias 'New-CSR'

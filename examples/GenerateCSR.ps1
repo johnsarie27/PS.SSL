@@ -43,7 +43,7 @@ New-CSR @csrParams
 $root = "$HOME\Desktop\test\CSR"
 
 # CREATE EXAMPLE TEMPLATE IN ROOT
-$CSR_Template | Set-Content -Path "$root\template.conf"
+Get-CSRTemplate | Set-Content -Path "$root\template.conf"
 
 # OPEN THE CONFIG FILE AND EDIT THE REQUIRED PROPERTIES
 code "$root\template.conf"

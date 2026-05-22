@@ -1,7 +1,7 @@
 function Build-CsrConfig {
     <#
     .SYNOPSIS
-        Render the module's CSR_Template into an openssl req config file.
+        Render the module's CSR template into an openssl req config file.
     .DESCRIPTION
         Internal helper shared by New-CertificateSigningRequest and
         New-SelfSignedCertificate. Takes the same subject fields the public
@@ -43,7 +43,8 @@ function Build-CsrConfig {
         PS C:\> Build-CsrConfig -CommonName www.example.com -OutputPath C:\out\www.example.com.conf -Organization Contoso
     .NOTES
         Status: Stable
-        - Reads the module-scoped $CSR_Template variable defined in PS.SSL.psm1.
+        - Reads the canonical template via Public/Get-CSRTemplate.ps1 so the
+          template definition lives in exactly one place.
         - The token-substitution behavior is preserved verbatim from the
           original inline implementations in the two public callers, so this
           helper is a refactor with no semantic change.
@@ -82,7 +83,7 @@ function Build-CsrConfig {
         $template = [System.Collections.ArrayList]::new()
 
         # ADD TEMPLATE TO LIST
-        $template.AddRange($CSR_Template)
+        $template.AddRange((Get-CSRTemplate))
 
         # ADD SUBJECT ALTERNATIVE NAMES TO LIST
         if ($PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
