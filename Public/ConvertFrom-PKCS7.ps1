@@ -42,20 +42,7 @@ function ConvertFrom-PKCS7 {
     End {
         # VERIFY SIGNED CERTIFICATE
         # openssl.exe pkcs7 -in certnew.p7b -print_certs -out $newFile
-        $sslParams = @{
-            FilePath     = 'openssl' # .exe
-            ArgumentList = @(
-                'pkcs7'
-                '-in {0}' -f $Path
-                '-print_certs'
-                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath $name)
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
-        }
-        $proc = Start-Process @sslParams
-
-        if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
+        $outFile = Join-Path -Path $OutputDirectory -ChildPath $name
+        [System.Void] (Invoke-OpenSsl -ArgumentList @('pkcs7', '-in', $Path, '-print_certs', '-out', $outFile))
     }
 }
