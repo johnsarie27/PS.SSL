@@ -29,7 +29,7 @@ function Export-PFX {
         General notes
         https://man.openbsd.org/openssl.1
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = '__nochain')]
     Param(
         [Parameter(HelpMessage = 'Output directory for CSR and key file')]
         [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
@@ -47,11 +47,12 @@ function Export-PFX {
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
         [System.String] $SignedCSR,
 
-        [Parameter(HelpMessage = 'Path to root CA public certificate')]
+        [Parameter(Mandatory, ParameterSetName = '__rootonly', HelpMessage = 'Path to root CA public certificate')]
+        [Parameter(Mandatory, ParameterSetName = '__fullchain', HelpMessage = 'Path to root CA public certificate')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
         [System.String] $RootCA,
 
-        [Parameter(HelpMessage = 'Path to intermediate CA public certificate')]
+        [Parameter(Mandatory, ParameterSetName = '__fullchain', HelpMessage = 'Path to intermediate CA public certificate')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
         [System.String] $IntermediateCA,
 
@@ -65,14 +66,16 @@ function Export-PFX {
         # SET PFX PATH - THIS CAN ALSO BE A ".P12" IF DESIRED
         $pfxPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.pfx' -f (Split-Path -Path $SignedCSR -LeafBase))
 
-        # COMBINE CERTIFICATES IN CHAIN
-        if ($PSBoundParameters.ContainsKey('IntermediateCA')) {
-            $chain = Join-Path -Path $OutputDirectory -ChildPath 'CAChain.crt'
-            Get-Content -Path $IntermediateCA | Set-Content -Path $chain
-            Get-Content -Path $RootCA | Add-Content -Path $chain
-        }
-        elseif ($PSBoundParameters.ContainsKey('RootCA')) {
-            $chain = $RootCA
+        # COMBINE CERTIFICATES IN CHAIN (parameter set guarantees RootCA is present when IntermediateCA is)
+        switch ($PSCmdlet.ParameterSetName) {
+            '__fullchain' {
+                $chain = Join-Path -Path $OutputDirectory -ChildPath 'CAChain.crt'
+                Get-Content -Path $IntermediateCA | Set-Content -Path $chain
+                Get-Content -Path $RootCA | Add-Content -Path $chain
+            }
+            '__rootonly' {
+                $chain = $RootCA
+            }
         }
 
         # CREATE CREDENTIAL OBJECT WITH PASSWORD
