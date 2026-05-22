@@ -19,7 +19,7 @@ function Export-Base64Certificate {
     .NOTES
         Name:     Export-Base64Certificate
         Author:   Justin Johns
-        Version:  0.1.1 | Last Edit: 2024-06-27
+        Version:  0.1.2 | Last Edit: 2026-05-22
         - Version history is captured in repository commit history
         Comments: <Comment(s)>
     #>
