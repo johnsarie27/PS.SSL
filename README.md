@@ -53,8 +53,10 @@ git clone https://github.com/johnsarie27/PS.SSL.git (Join-Path $modulesPath 'PS.
 Import-Module PS.SSL
 ```
 
-The `examples/setup.ps1` helper does the same end-to-end on Windows
-(download zip → expand → unblock → open a sample script). See
+The `examples/setup.ps1` helper does the same end-to-end on Windows,
+macOS, and Linux (installs openssl via winget/brew/apt-get/dnf, clones
+into your user-scope modules folder, and copies the example scripts to
+`~/ps.ssl-examples`). See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the local development workflow
 (psake build, Pester tests, PSScriptAnalyzer).
 
