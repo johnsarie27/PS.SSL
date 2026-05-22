@@ -52,22 +52,18 @@ function Test-Cipher {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
     }
     Process {
-        # SET SSL PARAMETERS
-        $sslParams = @{
-            FilePath = 'openssl'
-            ArgumentList = @(
-                # openssl s_client -cipher '<CIPHER>' -connect <IP/HostName>:<Port>
-                's_client -cipher {0} -connect {1}:{2}' -f $Cipher, $ComputerName, $Port
-            )
-            Wait = $true; NoNewWindow = $true; PassThru = $true
+        # openssl s_client -cipher '<CIPHER>' -connect <IP/HostName>:<Port>
+        # A non-zero exit means the server rejected the cipher; preserve the
+        # existing non-terminating Write-Error behavior. Item 3b will rework
+        # this to return a structured object.
+        $endpoint = '{0}:{1}' -f $ComputerName, $Port
+        $result = Invoke-OpenSsl -ArgumentList @('s_client', '-cipher', $Cipher, '-connect', $endpoint) -IgnoreExitCode
+
+        if ($result.ExitCode -ne 0) {
+            Write-Error -Message ('openssl failed with exit code {0}: {1}' -f $result.ExitCode, $result.StdErr.Trim())
         }
-
-        # GENERATE CERTIFICATE FILES USING OPENSSL
-        $proc = Start-Process @sslParams
-
-        # VALIDATE RESPONSE
-        if ($proc.ExitCode -NE 0) {
-            Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode)
+        else {
+            $result.StdOut
         }
     }
 }
