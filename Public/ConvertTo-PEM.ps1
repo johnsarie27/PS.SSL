@@ -56,8 +56,10 @@ function ConvertTo-PEM {
         # is invisible to peer-process listings, ETW process-start events,
         # and EDR command-line telemetry.
         $outFile = Join-Path -Path $OutputDirectory -ChildPath $name
-        [System.Void] (Invoke-OpenSsl `
-            -ArgumentList @('pkcs12', '-in', $PFX, '-out', $outFile, '-nodes', '-passin', 'env:PSSL_PASSIN') `
-            -EnvironmentVariable @{ PSSL_PASSIN = $Password })
+        $sslParams = @{
+            ArgumentList        = @('pkcs12', '-in', $PFX, '-out', $outFile, '-nodes', '-passin', 'env:PSSL_PASSIN')
+            EnvironmentVariable = @{ PSSL_PASSIN = $Password }
+        }
+        [System.Void] (Invoke-OpenSsl @sslParams)
     }
 }
