@@ -75,14 +75,16 @@ Task 'CombineFunctionsAndStage' -depends 'Setup' {
     #$combinedModulePath = Join-Path -Path $StagingModulePath -ChildPath "$($env:BHProjectName).psm1"
     #@($publicFunctions + $privateFunctions) | Get-Content | Add-Content -Path $combinedModulePath
 
-    # Copy other required folders and files
+    # Copy other required folders and files. 'Private' is optional and may not
+    # exist when there are no private helpers; filter to existing paths so the
+    # build does not fail in that case.
     $pathsToCopy = @(
         Join-Path -Path $ProjectRoot -ChildPath 'Private'
         Join-Path -Path $ProjectRoot -ChildPath 'Public'
         Join-Path -Path $ProjectRoot -ChildPath 'README.md'
         Join-Path -Path $ProjectRoot -ChildPath ($env:BHProjectName + '.psd1')
         Join-Path -Path $ProjectRoot -ChildPath ($env:BHProjectName + '.psm1')
-    )
+    ) | Where-Object { Test-Path -Path $_ }
     Copy-Item -Path $pathsToCopy -Destination $StagingModulePath -Recurse
 
     # Copy existing manifest
