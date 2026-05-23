@@ -50,6 +50,9 @@ function Get-CSRData {
         [Alias('CSR')]
         [System.String] $Path
     )
+    Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    }
     Process {
         # openssl req -text -noout -verify -in <csr>
         # -IgnoreExitCode: a verification failure should produce a structured

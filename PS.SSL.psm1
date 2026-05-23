@@ -5,7 +5,7 @@
 # ==============================================================================
 
 # CHECK FOR PLATFORM
-if ($IsWindows -or ($null -EQ $IsWindows)) {
+if ($IsWindows -or ($null -eq $IsWindows)) {
 
     # CHECK FOR OPENSSL
     if ($env:Path -notmatch 'openssl') {

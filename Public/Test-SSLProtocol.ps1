@@ -32,6 +32,8 @@ function Test-SSLProtocol {
         [System.Int32] $Port = 443
     )
     Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+
         $protoProps = [System.Security.Authentication.SslProtocols] | Get-Member -Static -MemberType Property
         $protoNames = ($protoProps | Where-Object Name -notin 'Default', 'None').Name
     }

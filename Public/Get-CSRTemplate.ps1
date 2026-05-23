@@ -35,6 +35,9 @@ function Get-CSRTemplate {
     [CmdletBinding()]
     [OutputType([System.String[]])]
     Param()
+    Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    }
     Process {
         @(
             '[req]'

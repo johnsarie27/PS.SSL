@@ -65,6 +65,8 @@ function Export-PFX {
         [System.Management.Automation.SwitchParameter] $WindowsCompatible
     )
     Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+
         # GET OUTPUT DIRECTORY
         Initialize-OutputDirectory -Path $OutputDirectory
 

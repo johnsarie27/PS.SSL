@@ -58,6 +58,9 @@ function Get-RemoteSSLCertificate {
         [ValidateRange(1, 65535)]
         [System.Int32] $Port = 443
     )
+    Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    }
     Process {
 
         foreach ($cn in $ComputerName) {

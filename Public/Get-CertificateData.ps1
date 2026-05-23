@@ -50,6 +50,9 @@ function Get-CertificateData {
             })]
         [System.String] $Path
     )
+    Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    }
     Process {
         # Normalize PEM/CRT/CER input to DER bytes via openssl. We write to a
         # temp file rather than capturing DER bytes from stdout because the

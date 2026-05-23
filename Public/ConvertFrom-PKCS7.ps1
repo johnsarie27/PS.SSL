@@ -29,6 +29,8 @@ function ConvertFrom-PKCS7 {
         [System.String] $OutputDirectory = "$HOME\Desktop"
     )
     Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+
         # GET OUTPUT DIRECTORY
         Initialize-OutputDirectory -Path $OutputDirectory
 

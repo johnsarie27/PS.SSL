@@ -36,6 +36,8 @@ function ConvertTo-PEM {
         [System.Security.SecureString] $Password
     )
     Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+
         # VALIDATE PASSWORD
         Get-PfxCertificate -FilePath $Path -Password $Password -ErrorAction Stop | Out-Null
 

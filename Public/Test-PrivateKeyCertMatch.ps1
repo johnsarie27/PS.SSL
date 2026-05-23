@@ -76,7 +76,7 @@ function Test-PrivateKeyCertMatch {
         $keyProc = Start-Process @keyParams
 
         # VALIDATE KEY EXTRACTION
-        if ($keyProc.ExitCode -NE 0) {
+        if ($keyProc.ExitCode -ne 0) {
             # CLEANUP TEMPORARY FILES
             Remove-Item -Path $keyTempFile, $certTempFile -Force -ErrorAction SilentlyContinue
             Write-Error -Message ('openssl failed to extract public key from private key with exit code: {0}' -f $keyProc.ExitCode) -ErrorAction Stop
@@ -101,7 +101,7 @@ function Test-PrivateKeyCertMatch {
         $certProc = Start-Process @certParams
 
         # VALIDATE CERTIFICATE EXTRACTION
-        if ($certProc.ExitCode -NE 0) {
+        if ($certProc.ExitCode -ne 0) {
             # CLEANUP TEMPORARY FILES
             Remove-Item -Path $keyTempFile, $certTempFile -Force -ErrorAction SilentlyContinue
             Write-Error -Message ('openssl failed to extract public key from certificate with exit code: {0}' -f $certProc.ExitCode) -ErrorAction Stop

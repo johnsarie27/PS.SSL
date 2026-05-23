@@ -130,7 +130,7 @@ Task 'Analyze' -depends 'ImportStagingModule' {
         }
         'Error' {
             Assert -conditionToCheck (
-                ($Results | Where-Object 'Severity' -EQ 'Error').Count -eq 0
+                ($Results | Where-Object 'Severity' -eq 'Error').Count -eq 0
             ) -failureMessage 'One or more ScriptAnalyzer errors were found. Build cannot continue!'
         }
         'Warning' {
