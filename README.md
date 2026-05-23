@@ -88,6 +88,12 @@ into your user-scope modules folder, and copies the example scripts to
 Run `Get-Help <Cmdlet-Name> -Full` for parameter details and examples on any
 of the above.
 
+Every cmdlet carries a `Status` marker (`Stable`, `Beta`, `Experimental`, or
+`Deprecated`) in its `.NOTES` block. Most exports are `Stable`; three are
+currently `Beta` and may change shape based on feedback:
+`Export-CertificateData`, `Get-CertificateData`, `Get-CSRData`. Run
+`Get-Help <Cmdlet-Name> -Full` to see the marker for any cmdlet.
+
 ## Usage
 
 ### Generate a CSR and private key
