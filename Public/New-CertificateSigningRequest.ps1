@@ -9,7 +9,13 @@ function New-CertificateSigningRequest {
     .PARAMETER ConfigFile
         Path to configuration template file
     .PARAMETER CommonName
-        Common Name (CN)
+        Common Name (CN). Restricted by ValidatePattern to the TLD allow-list
+        (.com/.org/.gov/.info) and does NOT accept a leading wildcard
+        (e.g. `*.example.com`). This is a deliberate security/compliance
+        posture: wildcard certificates are discouraged. To issue a wildcard
+        CSR, use the `-ConfigFile` parameter set with a caller-supplied
+        openssl `req` config (the `__conf` branch is wildcard-aware and
+        sanitizes the `*` out of the artifact filenames).
     .PARAMETER Country
         Country Name (C)
     .PARAMETER State
@@ -42,6 +48,11 @@ function New-CertificateSigningRequest {
         Creates a new CSR and private key for www.myDomain.com
     .NOTES
         Status: Stable
+
+        - Wildcard CNs (`*.example.com`) are rejected by the `CommonName`
+          ValidatePattern and so are unreachable via the `__input`
+          parameter set. Wildcard CSRs remain supported via `-ConfigFile`.
+          See the `CommonName` parameter help for the rationale.
     #>
     [Alias('New-CSR')]
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = '__conf')]
@@ -113,7 +124,13 @@ function New-CertificateSigningRequest {
             # here rather than reading it back from the rendered .conf.
             $fileName = $CommonName
 
-            # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
+            # `*` is not a valid Windows filename character. The CommonName
+            # ValidatePattern currently rejects wildcards, so this rewrite is
+            # unreachable from the `__input` branch today; it is kept
+            # intentionally so that relaxing the regex in the future (when
+            # wildcard CSRs are again permitted by policy) does not require
+            # a parallel filename-sanitization change. The `__conf` branch
+            # below uses the same rewrite and IS reachable for wildcards.
             if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
 
             # The .conf is intentionally preserved alongside the .csr / .key
