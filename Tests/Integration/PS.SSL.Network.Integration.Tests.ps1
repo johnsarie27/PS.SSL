@@ -98,4 +98,56 @@ Describe 'PS.SSL network integration (real TLS endpoint)' -Tag 'Integration', 'N
             $result.ComputerName | Should -Be $script:NetworkTarget
         }
     }
+
+    Context 'Get-RemoteSSLCertificate against badssl.com' {
+
+        BeforeAll {
+            $script:remoteCert = Get-RemoteSSLCertificate -ComputerName $script:NetworkTarget -Port $script:NetworkPort
+        }
+
+        It 'Returns an X509Certificate2' {
+            $script:remoteCert | Should -BeOfType ([System.Security.Cryptography.X509Certificates.X509Certificate2])
+        }
+
+        It 'Populates Subject with a non-empty string' {
+            $script:remoteCert.Subject | Should -Not -BeNullOrEmpty
+        }
+
+        It 'Returns a currently-valid certificate (NotAfter is in the future)' {
+            $script:remoteCert.NotAfter | Should -BeOfType ([datetime])
+            $script:remoteCert.NotAfter | Should -BeGreaterThan (Get-Date)
+        }
+
+        It 'Accepts -ComputerName from the pipeline' {
+            $result = $script:NetworkTarget | Get-RemoteSSLCertificate -Port $script:NetworkPort
+            $result         | Should -Not -BeNullOrEmpty
+            $result.Subject | Should -Not -BeNullOrEmpty
+        }
+
+        It 'Returns one certificate per host when given multiple -ComputerName values' {
+            $hosts = @($script:NetworkTarget, $script:NetworkTarget)
+            $results = Get-RemoteSSLCertificate -ComputerName $hosts -Port $script:NetworkPort
+            $results.Count | Should -Be 2
+            $results | ForEach-Object {
+                $_ | Should -BeOfType ([System.Security.Cryptography.X509Certificates.X509Certificate2])
+            }
+        }
+    }
+
+    Context 'Get-RemoteSSLCertificate intentionally bypasses validation' {
+
+        # SECURITY contract test: Get-RemoteSSLCertificate documents that it
+        # accepts any server certificate so operators can inspect expired,
+        # self-signed, and otherwise invalid certs. expired.badssl.com serves
+        # a cert with NotAfter in the past; if a future change re-enables
+        # validation, AuthenticateAsClient will throw and this test will fail
+        # loudly. See the SECURITY note in Get-RemoteSSLCertificate's help.
+
+        It 'Retrieves an expired certificate without throwing' {
+            $expiredHost = 'expired.badssl.com'
+            $cert = Get-RemoteSSLCertificate -ComputerName $expiredHost -Port 443
+            $cert           | Should -BeOfType ([System.Security.Cryptography.X509Certificates.X509Certificate2])
+            $cert.NotAfter  | Should -BeLessThan (Get-Date)
+        }
+    }
 }
