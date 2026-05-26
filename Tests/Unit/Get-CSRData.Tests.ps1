@@ -11,30 +11,32 @@ BeforeAll {
     # Representative openssl `req -text -noout -verify` output for a 4096-bit
     # RSA CSR with two SANs. The trailing "Certificate request self-signature
     # verify OK" line is what the function uses to set the Verified property.
-    $script:opensslStdOut = @'
-Certificate request self-signature verify OK
-Certificate Request:
-    Data:
-        Version: 1 (0x0)
-        Subject: C = US, ST = California, L = Redlands, O = Esri, OU = IT, CN = test.example.com, emailAddress = admin@example.com
-        Subject Public Key Info:
-            Public Key Algorithm: rsaEncryption
-                Public-Key: (4096 bit)
-                Modulus:
-                    00:aa:bb:cc:dd
-                Exponent: 65537 (0x10001)
-        Attributes:
-        Requested Extensions:
-            X509v3 Key Usage:
-                Key Encipherment, Data Encipherment
-            X509v3 Extended Key Usage:
-                TLS Web Server Authentication
-            X509v3 Subject Alternative Name:
-                DNS:a.example.com, DNS:b.example.com
-    Signature Algorithm: sha256WithRSAEncryption
-    Signature Value:
-        00:11:22:33:44:55
-'@
+    # Built as an array and joined so indentation aligns with surrounding code;
+    # the function parses StdOut as a single multi-line string.
+    $script:opensslStdOut = @(
+        'Certificate request self-signature verify OK'
+        'Certificate Request:'
+        '    Data:'
+        '        Version: 1 (0x0)'
+        '        Subject: C = US, ST = California, L = Redlands, O = Esri, OU = IT, CN = test.example.com, emailAddress = admin@example.com'
+        '        Subject Public Key Info:'
+        '            Public Key Algorithm: rsaEncryption'
+        '                Public-Key: (4096 bit)'
+        '                Modulus:'
+        '                    00:aa:bb:cc:dd'
+        '                Exponent: 65537 (0x10001)'
+        '        Attributes:'
+        '        Requested Extensions:'
+        '            X509v3 Key Usage:'
+        '                Key Encipherment, Data Encipherment'
+        '            X509v3 Extended Key Usage:'
+        '                TLS Web Server Authentication'
+        '            X509v3 Subject Alternative Name:'
+        '                DNS:a.example.com, DNS:b.example.com'
+        '    Signature Algorithm: sha256WithRSAEncryption'
+        '    Signature Value:'
+        '        00:11:22:33:44:55'
+    ) -join [System.Environment]::NewLine
 
     $script:opensslStdOutFailed = $script:opensslStdOut -replace 'self-signature verify OK', 'Signature did not match the certificate request'
 }
