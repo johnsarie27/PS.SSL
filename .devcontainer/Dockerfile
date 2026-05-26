@@ -1,5 +1,5 @@
 # use the 730MB sdk image to build
-FROM mcr.microsoft.com/dotnet/sdk as builder
+FROM mcr.microsoft.com/dotnet/sdk AS builder
 
 # install the latest version of PowerShell
 RUN dotnet tool install -g PowerShell
@@ -8,8 +8,8 @@ RUN dotnet tool install -g PowerShell
 #FROM mcr.microsoft.com/dotnet/runtime
 #COPY --from=builder /root/.dotnet/tools/ /bin
 
-# install git
-RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+# install git and ssh client (required by git when cloning/fetching over SSH remotes)
+RUN apt-get update && apt-get install -y --no-install-recommends git openssh-client && rm -rf /var/lib/apt/lists/*
 
 # run powershell
-ENTRYPOINT pwsh
+ENTRYPOINT ["pwsh"]
