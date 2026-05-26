@@ -55,7 +55,7 @@ function Verb-Noun {
         [string] $ParameterName
     )
     Begin {
-        Write-Verbose -Message 'Starting Verb-Noun'
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
     }
     Process {
         # Function logic here
