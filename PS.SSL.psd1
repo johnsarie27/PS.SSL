@@ -9,6 +9,9 @@
     RootModule        = 'PS.SSL.psm1'
 
     # Version number of this module.
+    # Major = significant changes, breaking changes or major new features
+    # Minor = new functions or features
+    # Build = bug fixes and minor updates
     ModuleVersion     = '0.3.1'
 
     # Supported PSEditions
