@@ -20,6 +20,9 @@ Describe 'Test-Protocol' {
         Mock -ModuleName PS.SSL Invoke-OpenSsl {
             [PSCustomObject] @{ ExitCode = 0; StdOut = 'handshake ok'; StdErr = '' }
         }
+        # Default the TCP pre-flight to success so the suite never touches the
+        # real network. The dedicated short-circuit context overrides this.
+        Mock -ModuleName PS.SSL Test-TcpConnection { $true }
     }
 
     Context 'Parameter validation' {
@@ -129,6 +132,38 @@ Describe 'Test-Protocol' {
             $result.ComputerName | Should -Be 'example.com'
             $result.Port         | Should -Be 8443
             $result.Protocol     | Should -Be 'TLS 1.3'
+        }
+    }
+
+    Context 'TCP pre-flight short-circuit' {
+
+        BeforeEach {
+            Mock -ModuleName PS.SSL Test-TcpConnection { $false }
+        }
+
+        It 'Skips Invoke-OpenSsl when the TCP probe fails' {
+            Test-Protocol -ComputerName $script:testHost -Protocol 'TLS 1.2' | Out-Null
+            Should -Invoke -ModuleName PS.SSL -CommandName 'Invoke-OpenSsl' -Times 0 -Exactly
+        }
+
+        It 'Returns Supported=$false with a timeout error message' {
+            $result = Test-Protocol -ComputerName $script:testHost -Protocol 'TLS 1.2'
+            $result.Supported | Should -BeFalse
+            $result.Error    | Should -Match 'TCP connect to example.com:443 (failed|timed out)'
+        }
+
+        It 'Passes -TimeoutSeconds (in ms) to the TCP probe' {
+            Test-Protocol -ComputerName $script:testHost -Protocol 'TLS 1.2' -TimeoutSeconds 7 | Out-Null
+            Should -Invoke -ModuleName PS.SSL -CommandName 'Test-TcpConnection' -Times 1 -Exactly -ParameterFilter {
+                $TimeoutMilliseconds -eq 7000
+            }
+        }
+
+        It 'Defaults TimeoutSeconds to 3 (3000ms) when not supplied' {
+            Test-Protocol -ComputerName $script:testHost -Protocol 'TLS 1.2' | Out-Null
+            Should -Invoke -ModuleName PS.SSL -CommandName 'Test-TcpConnection' -Times 1 -Exactly -ParameterFilter {
+                $TimeoutMilliseconds -eq 3000
+            }
         }
     }
 }

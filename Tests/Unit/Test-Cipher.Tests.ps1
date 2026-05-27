@@ -33,6 +33,9 @@ Describe 'Test-Cipher' -Skip:(-not $script:opensslAvailable) {
         Mock -ModuleName PS.SSL Invoke-OpenSsl {
             [PSCustomObject] @{ ExitCode = 0; StdOut = 'handshake ok'; StdErr = '' }
         }
+        # Default the TCP pre-flight to success so the suite never touches the
+        # real network. The dedicated short-circuit context overrides this.
+        Mock -ModuleName PS.SSL Test-TcpConnection { $true }
     }
 
     Context 'Parameter validation' {
@@ -115,6 +118,38 @@ Describe 'Test-Cipher' -Skip:(-not $script:opensslAvailable) {
             $result.ComputerName | Should -Be 'example.com'
             $result.Port         | Should -Be 8443
             $result.Cipher       | Should -Be $script:validCipher
+        }
+    }
+
+    Context 'TCP pre-flight short-circuit' {
+
+        BeforeEach {
+            Mock -ModuleName PS.SSL Test-TcpConnection { $false }
+        }
+
+        It 'Skips Invoke-OpenSsl when the TCP probe fails' {
+            Test-Cipher -ComputerName $script:testHost -Cipher $script:validCipher | Out-Null
+            Should -Invoke -ModuleName PS.SSL -CommandName 'Invoke-OpenSsl' -Times 0 -Exactly
+        }
+
+        It 'Returns Supported=$false with a timeout error message' {
+            $result = Test-Cipher -ComputerName $script:testHost -Cipher $script:validCipher
+            $result.Supported | Should -BeFalse
+            $result.Error    | Should -Match 'TCP connect to example.com:443 (failed|timed out)'
+        }
+
+        It 'Passes -TimeoutSeconds (in ms) to the TCP probe' {
+            Test-Cipher -ComputerName $script:testHost -Cipher $script:validCipher -TimeoutSeconds 7 | Out-Null
+            Should -Invoke -ModuleName PS.SSL -CommandName 'Test-TcpConnection' -Times 1 -Exactly -ParameterFilter {
+                $TimeoutMilliseconds -eq 7000
+            }
+        }
+
+        It 'Defaults TimeoutSeconds to 3 (3000ms) when not supplied' {
+            Test-Cipher -ComputerName $script:testHost -Cipher $script:validCipher | Out-Null
+            Should -Invoke -ModuleName PS.SSL -CommandName 'Test-TcpConnection' -Times 1 -Exactly -ParameterFilter {
+                $TimeoutMilliseconds -eq 3000
+            }
         }
     }
 }

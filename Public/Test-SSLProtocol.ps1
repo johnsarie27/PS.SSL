@@ -8,6 +8,10 @@ function Test-SSLProtocol {
         Target Computer System
     .PARAMETER Port
         TCP Port
+    .PARAMETER TimeoutSeconds
+        Max wait for each TCP connect attempt, in seconds. Bounds total
+        wait when a host resolves to many unresponsive addresses
+        (default: 3).
     .INPUTS
         System.String.
     .OUTPUTS
@@ -29,7 +33,11 @@ function Test-SSLProtocol {
 
         [Parameter(Position = 1, HelpMessage = 'TCP Port')]
         [ValidateRange(0, 65535)]
-        [System.Int32] $Port = 443
+        [System.Int32] $Port = 443,
+
+        [Parameter(HelpMessage = 'TCP connect timeout, in seconds')]
+        [ValidateRange(1, 600)]
+        [System.Int32] $TimeoutSeconds = 3
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
@@ -47,12 +55,29 @@ function Test-SSLProtocol {
             SignatureAlgorithm = $null
         }
 
+        # TCP PRE-FLIGHT. If the endpoint is unreachable, record every
+        # protocol as $false up front instead of waiting for Socket.Connect
+        # to walk every DNS A record at the OS default connect timeout.
+        if (-not (Test-TcpConnection -ComputerName $ComputerName -Port $Port -TimeoutMilliseconds ($TimeoutSeconds * 1000))) {
+            Write-Warning -Message ('TCP connect to {0}:{1} failed or timed out after {2}s; reporting all protocols as unsupported.' -f $ComputerName, $Port, $TimeoutSeconds)
+            foreach ($pn in $protoNames) { $protocolStatus.Add($pn, $false) }
+            [PSCustomObject] $protocolStatus
+            return
+        }
+
+        $connectTimeoutMs = $TimeoutSeconds * 1000
         foreach ($pn in $protoNames) {
 
             $socket = $null; $netStream = $null; $sslStream = $null
             try {
                 $socket = New-Object System.Net.Sockets.Socket([System.Net.Sockets.SocketType]::Stream, [System.Net.Sockets.ProtocolType]::Tcp)
-                $socket.Connect($ComputerName, $Port)
+                # Use the async ConnectAsync + Wait pattern to bound the connect
+                # time. Socket.Connect(host, port) has no per-attempt timeout
+                # and iterates DNS results at the OS default (~21s/address).
+                $connectTask = $socket.ConnectAsync($ComputerName, $Port)
+                if (-not $connectTask.Wait($connectTimeoutMs)) {
+                    throw [System.TimeoutException]::new(('TCP connect to {0}:{1} timed out after {2}s' -f $ComputerName, $Port, $TimeoutSeconds))
+                }
                 $netStream = New-Object System.Net.Sockets.NetworkStream($socket, $true)
                 $sslStream = New-Object System.Net.Security.SslStream($netStream, $true)
                 $sslStream.AuthenticateAsClient($ComputerName, $null, $pn, $false )
