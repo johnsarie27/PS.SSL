@@ -12,6 +12,9 @@ function Test-Cipher {
         TCP Port
     .PARAMETER Cipher
         Cipher
+    .PARAMETER TimeoutSeconds
+        Max wait for the TCP pre-flight, in seconds. Bounds total wait when
+        a host resolves to many unresponsive addresses (default: 3).
     .INPUTS
         None.
     .OUTPUTS
@@ -49,17 +52,35 @@ function Test-Cipher {
             }
             $true
         })]
-        [System.String] $Cipher
+        [System.String] $Cipher,
+
+        [Parameter(HelpMessage = 'TCP connect timeout, in seconds')]
+        [ValidateRange(1, 600)]
+        [System.Int32] $TimeoutSeconds = 3
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
     }
     Process {
+        # TCP PRE-FLIGHT. Without this, an unreachable host that resolves to
+        # many addresses (common with split-horizon corp DNS) causes openssl
+        # s_client to walk every address at the OS default connect timeout,
+        # producing 90+ second hangs. Bound the wait time and short-circuit.
+        $endpoint = '{0}:{1}' -f $ComputerName, $Port
+        if (-not (Test-TcpConnection -ComputerName $ComputerName -Port $Port -TimeoutMilliseconds ($TimeoutSeconds * 1000))) {
+            return [PSCustomObject] @{
+                ComputerName = $ComputerName
+                Port         = $Port
+                Cipher       = $Cipher
+                Supported    = $false
+                Error        = ('TCP connect to {0} failed or timed out after {1}s' -f $endpoint, $TimeoutSeconds)
+            }
+        }
+
         # openssl s_client -cipher '<CIPHER>' -connect <host:port>
         # Non-zero exit means the server rejected the cipher; use
         # -IgnoreExitCode so we receive the result object instead of a
         # terminating error and can encode the outcome as Supported=$false.
-        $endpoint = '{0}:{1}' -f $ComputerName, $Port
         $result = Invoke-OpenSsl -ArgumentList @('s_client', '-cipher', $Cipher, '-connect', $endpoint) -IgnoreExitCode
 
         [PSCustomObject] @{
