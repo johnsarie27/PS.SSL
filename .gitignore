@@ -1,0 +1,17 @@
+# Build outputs (produced by Build/build.ps1 / psake tasks)
+Artifacts/
+Staging/
+BuildOutput/
+
+# Helper artifacts used during refactor work
+.commit-msg-*.txt
+.issue-body-*.txt
+.tick-*.ps1
+.fix-*.ps1
+*.tmp
+
+# Editor / OS noise
+.vs/
+.vscode/*.log
+Thumbs.db
+.DS_Store

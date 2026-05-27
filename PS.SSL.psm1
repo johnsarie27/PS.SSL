@@ -5,7 +5,7 @@
 # ==============================================================================
 
 # CHECK FOR PLATFORM
-if ($IsWindows -or ($null -EQ $IsWindows)) {
+if ($IsWindows -or ($null -eq $IsWindows)) {
 
     # CHECK FOR OPENSSL
     if ($env:Path -notmatch 'openssl') {
@@ -24,35 +24,16 @@ if ($IsMacOS -or $IsLinux) {
 }
 
 # IMPORT ALL FUNCTIONS
+# 'Private' is optional and may be absent (no private helpers). Skip missing
+# directories rather than letting Get-ChildItem throw on Linux/macOS where the
+# wildcard path is evaluated more strictly.
 foreach ( $directory in @('Public', 'Private') ) {
-    foreach ( $fn in (Get-ChildItem -Path "$PSScriptRoot\$directory\*.ps1") ) { . $fn.FullName }
+    $dirPath = Join-Path -Path $PSScriptRoot -ChildPath $directory
+    if (-not (Test-Path -Path $dirPath -PathType Container)) { continue }
+    foreach ( $fn in (Get-ChildItem -Path $dirPath -Filter '*.ps1' -File) ) { . $fn.FullName }
 }
-
-# VARIABLES
-New-Variable -Name 'CSR_Template' -Option ReadOnly -Value @(
-    '[req]'
-    'distinguished_name = req_distinguished_name'
-    'req_extensions = v3_req'
-    'default_bits = 4096'
-    'default_md = sha256'
-    'encrypt_key = no'
-    'prompt = no'
-    '[req_distinguished_name]'
-    'C = #C#'
-    'ST = #ST#'
-    'L = #L#'
-    'O = #O#'
-    'OU = #OU#'
-    'emailAddress = "#E#"'
-    'CN = #CN#'
-    '[v3_req]'
-    'keyUsage = keyEncipherment, dataEncipherment'
-    'extendedKeyUsage = serverAuth'
-    'subjectAltName = @alt_names'
-    '[alt_names]'
-)
 
 # EXPORT MEMBERS
 # THESE ARE SPECIFIED IN THE MODULE MANIFEST AND THEREFORE DON'T NEED TO BE LISTED HERE
 #Export-ModuleMember -Function *
-Export-ModuleMember -Variable 'CSR_Template' -Alias 'New-CSR'
+Export-ModuleMember -Alias 'New-CSR'

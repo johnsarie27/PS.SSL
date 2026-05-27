@@ -1,9 +1,11 @@
 function Test-Cipher {
     <#
     .SYNOPSIS
-        Test cipher suites
+        Test cipher suite support against a remote endpoint
     .DESCRIPTION
-        Test cipher suites
+        Probes a host:port with `openssl s_client` requesting a specific
+        cipher, and returns a structured result indicating whether the
+        handshake succeeded.
     .PARAMETER ComputerName
         Target Computer System
     .PARAMETER Port
@@ -13,19 +15,20 @@ function Test-Cipher {
     .INPUTS
         None.
     .OUTPUTS
-        None.
+        PSCustomObject with ComputerName, Port, Cipher, Supported, Error.
     .EXAMPLE
         PS C:\> Test-Cipher -ComputerName myServer.com -Port 443 -Cipher 'ECDHE-RSA-AES128-GCM-SHA256'
-        Uses openssl to test connecting to myServer.com over port 443 using the cipher 'ECDHE-RSA-AES128-GCM-SHA256'
+
+        ComputerName Port Cipher                       Supported Error
+        ------------ ---- ------                       --------- -----
+        myServer.com  443 ECDHE-RSA-AES128-GCM-SHA256       True
     .NOTES
-        Name:     Test-Cipher
-        Author:   Justin Johns
-        Version:  0.1.0 | Last Edit: 2023-12-21
-        - 0.1.0 - Initial version
-        Comments:
+        Status: Stable
+        References:
         https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html#describe-ssl-policies
     #>
     [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSCustomObject])]
     Param(
         [Parameter(Mandatory = $true, Position = 0, HelpMessage = 'Target System')]
         [ValidateNotNullOrEmpty()]
@@ -36,29 +39,35 @@ function Test-Cipher {
         [System.Int32] $Port = 443,
 
         [Parameter(Mandatory = $true, Position = 2, HelpMessage = 'Cipher')]
-        [ValidateScript({ $_ -in ((openssl ciphers) -split ':') })]
+        [ValidateScript({
+            if (-not (Get-Command -Name 'openssl' -CommandType Application -ErrorAction SilentlyContinue)) {
+                Write-Error -Message "'openssl' was not found on PATH; cannot validate cipher." -Category ObjectNotFound -ErrorAction Stop
+            }
+            $supported = (& openssl ciphers 2>$null) -split ':'
+            if ($_ -notin $supported) {
+                Write-Error -Message ("Cipher '{0}' is not in the local openssl cipher list. Run 'openssl ciphers' to view supported values." -f $_) -Category InvalidArgument -ErrorAction Stop
+            }
+            $true
+        })]
         [System.String] $Cipher
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
     }
     Process {
-        # SET SSL PARAMETERS
-        $sslParams = @{
-            FilePath = 'openssl'
-            ArgumentList = @(
-                # openssl s_client -cipher '<CIPHER>' -connect <IP/HostName>:<Port>
-                's_client -cipher {0} -connect {1}:{2}' -f $Cipher, $ComputerName, $Port
-            )
-            Wait = $true; NoNewWindow = $true; PassThru = $true
-        }
+        # openssl s_client -cipher '<CIPHER>' -connect <host:port>
+        # Non-zero exit means the server rejected the cipher; use
+        # -IgnoreExitCode so we receive the result object instead of a
+        # terminating error and can encode the outcome as Supported=$false.
+        $endpoint = '{0}:{1}' -f $ComputerName, $Port
+        $result = Invoke-OpenSsl -ArgumentList @('s_client', '-cipher', $Cipher, '-connect', $endpoint) -IgnoreExitCode
 
-        # GENERATE CERTIFICATE FILES USING OPENSSL
-        $proc = Start-Process @sslParams
-
-        # VALIDATE RESPONSE
-        if ($proc.ExitCode -NE 0) {
-            Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode)
+        [PSCustomObject] @{
+            ComputerName = $ComputerName
+            Port         = $Port
+            Cipher       = $Cipher
+            Supported    = ($result.ExitCode -eq 0)
+            Error        = if ($result.ExitCode -eq 0) { $null } else { $result.StdErr.Trim() }
         }
     }
 }

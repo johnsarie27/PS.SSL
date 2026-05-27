@@ -43,7 +43,7 @@ New-CSR @csrParams
 $root = "$HOME\Desktop\test\CSR"
 
 # CREATE EXAMPLE TEMPLATE IN ROOT
-$CSR_Template | Set-Content -Path "$root\template.conf"
+Get-CSRTemplate | Set-Content -Path "$root\template.conf"
 
 # OPEN THE CONFIG FILE AND EDIT THE REQUIRED PROPERTIES
 code "$root\template.conf"
@@ -55,7 +55,7 @@ New-CSR -OutputDirectory $root -ConfigFile "$root\template.conf"
 
 
 # VERIFY UNSIGNED CSR ATTRIBUTES
-Get-CSRData -CSR "$root\www.company.com.csr"
+Get-CSRData -Path "$root\www.company.com.csr"
 
 
 #region GENERATE PFX ===========================================================
@@ -73,12 +73,12 @@ Get-CertificateData -Path "$root\digicert\TrustedRoot.crt"
 
 # COMPLETE PROCESS BY EXPORTING PFX/P12
 $pfxParams = @{
-    OutputDirectory = "$root\completed"
-    Password        = Read-Host -AsSecureString -Prompt 'Password'
-    SignedCSR       = "$root\digicert\<CERTIFICATE>.crt"
-    Key             = "$root\<PRIVATE_KEY>.key"
-    RootCA          = "$root\digicert\TrustedRoot.crt"
-    IntermediateCA  = "$root\digicert\DigiCertCA.crt"
+    OutputDirectory    = "$root\completed"
+    Password           = Read-Host -AsSecureString -Prompt 'Password'
+    SignedCSRPath      = "$root\digicert\<CERTIFICATE>.crt"
+    KeyPath            = "$root\<PRIVATE_KEY>.key"
+    RootCAPath         = "$root\digicert\TrustedRoot.crt"
+    IntermediateCAPath = "$root\digicert\DigiCertCA.crt"
 }
 Export-PFX @pfxParams
 
@@ -97,8 +97,8 @@ ConvertFrom-PKCS7 -Path "$root\<CERTIFICATE>.pem" -OutputDirectory $root
 $pfxParams = @{
     OutputDirectory = "$root\completed"
     Password        = Read-Host -AsSecureString -Prompt 'Password'
-    SignedCSR       = "$root\digicert\<CERTIFICATE>.crt"
-    Key             = "$root\<PRIVATE_KEY>.key"
+    SignedCSRPath   = "$root\digicert\<CERTIFICATE>.crt"
+    KeyPath         = "$root\<PRIVATE_KEY>.key"
 }
 Export-PFX @pfxParams
 

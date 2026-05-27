@@ -1,9 +1,11 @@
 function Test-Protocol {
     <#
     .SYNOPSIS
-        Test TLS protocol
+        Test TLS protocol support against a remote endpoint
     .DESCRIPTION
-        Test TLS protocol
+        Probes a host:port with `openssl s_client` requesting a specific TLS
+        protocol version, and returns a structured result indicating whether
+        the handshake succeeded.
     .PARAMETER ComputerName
         Target Computer System
     .PARAMETER Port
@@ -13,18 +15,18 @@ function Test-Protocol {
     .INPUTS
         None.
     .OUTPUTS
-        None.
+        PSCustomObject with ComputerName, Port, Protocol, Supported, Error.
     .EXAMPLE
-        PS C:\> Test-Protocol -ComputerName mySever.com -Port 443 -Protocl 'TLS 1.2'
-        Uses openssl to test connecting to myServer.com over port 443 using TLS 1.2
+        PS C:\> Test-Protocol -ComputerName mySever.com -Port 443 -Protocol 'TLS 1.2'
+
+        ComputerName Port Protocol Supported Error
+        ------------ ---- -------- --------- -----
+        mySever.com   443 TLS 1.2       True
     .NOTES
-        Name:     Test-Protocol
-        Author:   Justin Johns
-        Version:  0.1.0 | Last Edit: 2023-12-21
-        - 0.1.0 - Initial version
-        Comments:
+        Status: Stable
     #>
     [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSCustomObject])]
     Param(
         [Parameter(Mandatory = $true, Position = 0, HelpMessage = 'Target System')]
         [ValidateNotNullOrEmpty()]
@@ -41,7 +43,7 @@ function Test-Protocol {
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
 
-        # SET HASH TABLE FOR PROTOCOL
+        # MAP FRIENDLY PROTOCOL NAMES TO openssl s_client SWITCHES
         $protoHash = @{
             'TLS 1.0' = 'tls1'
             'TLS 1.1' = 'tls1_1'
@@ -50,22 +52,25 @@ function Test-Protocol {
         }
     }
     Process {
-        # SET SSL PARAMETERS
-        $sslParams = @{
-            FilePath     = 'openssl'
-            ArgumentList = @(
-                #openssl.exe s_client -connect 10.0.0.24:3389 -tls1
-                's_client -connect {0}:{1} -{2}' -f $ComputerName, $Port, $protoHash[$Protocol]
-            )
-            Wait = $true; NoNewWindow = $true; PassThru = $true
-        }
+        # openssl.exe s_client -connect <host:port> -<protocol-switch>
+        # Non-zero exit means the server rejected the protocol; use
+        # -IgnoreExitCode so we receive the result object instead of a
+        # terminating error and can encode the outcome as Supported=$false.
+        $endpoint = '{0}:{1}' -f $ComputerName, $Port
+        $protoSwitch = '-{0}' -f $protoHash[$Protocol]
+        $result = Invoke-OpenSsl -ArgumentList @('s_client', '-connect', $endpoint, $protoSwitch) -IgnoreExitCode
 
-        # GENERATE CERTIFICATE FILES USING OPENSSL
-        $proc = Start-Process @sslParams
-
-        # VALIDATE RESPONSE
-        if ($proc.ExitCode -NE 0) {
-            Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode)
+        # On a successful handshake openssl writes the negotiated session to
+        # stdout and exits with code 0; on rejection it writes a diagnostic
+        # to stderr ("handshake failure", "no protocols available", etc.) and
+        # exits non-zero. Trim stderr for readability and only surface it on
+        # the failure path.
+        [PSCustomObject] @{
+            ComputerName = $ComputerName
+            Port         = $Port
+            Protocol     = $Protocol
+            Supported    = ($result.ExitCode -eq 0)
+            Error        = if ($result.ExitCode -eq 0) { $null } else { $result.StdErr.Trim() }
         }
     }
 }

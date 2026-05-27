@@ -9,7 +9,7 @@
     RootModule        = 'PS.SSL.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.2.8'
+    ModuleVersion     = '0.3.0'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -30,7 +30,7 @@
     Description       = 'Module for creating SSL certificate signing requests'
 
     # Minimum version of the PowerShell engine required by this module
-    PowerShellVersion = '5.1'
+    PowerShellVersion = '7.0'
 
     # Name of the PowerShell host required by this module
     # PowerShellHostName = ''
@@ -74,6 +74,7 @@
         'Export-PFX'
         'Get-CertificateData'
         'Get-CSRData'
+        'Get-CSRTemplate'
         'Get-RemoteSSLCertificate'
         'New-CertificateSigningRequest'
         'New-SelfSignedCertificate'
@@ -87,9 +88,7 @@
     CmdletsToExport   = @()
 
     # Variables to export from this module
-    VariablesToExport = @(
-        'CSR_Template'
-    )
+    VariablesToExport = @()
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
     AliasesToExport   = @(

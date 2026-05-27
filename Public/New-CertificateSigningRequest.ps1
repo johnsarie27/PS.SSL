@@ -6,12 +6,16 @@ function New-CertificateSigningRequest {
         Generate new CSR and Private key file
     .PARAMETER OutputDirectory
         Output directory for CSR and key file
-    .PARAMETER Days
-        Validity period in days (default is 365)
     .PARAMETER ConfigFile
         Path to configuration template file
     .PARAMETER CommonName
-        Common Name (CN)
+        Common Name (CN). Restricted by ValidatePattern to the TLD allow-list
+        (.com/.org/.gov/.info) and does NOT accept a leading wildcard
+        (e.g. `*.example.com`). This is a deliberate security/compliance
+        posture: wildcard certificates are discouraged. To issue a wildcard
+        CSR, use the `-ConfigFile` parameter set with a caller-supplied
+        openssl `req` config (the `__conf` branch is wildcard-aware and
+        sanitizes the `*` out of the artifact filenames).
     .PARAMETER Country
         Country Name (C)
     .PARAMETER State
@@ -26,36 +30,36 @@ function New-CertificateSigningRequest {
         Email Address
     .PARAMETER SubjectAlternativeName
         Subject Alternative Name (SAN)
+    .PARAMETER KeySize
+        RSA key size in bits (2048, 3072, or 4096; default is 4096). Emitted explicitly to openssl so the result is deterministic regardless of the config template contents.
     .INPUTS
         None.
     .OUTPUTS
-        System.Object.
+        None. Writes three files into -OutputDirectory:
+          <CN>.csr          - the certificate signing request
+          <CN>_PRIVATE.key  - the matching private key (unencrypted)
+          <CN>.conf         - the openssl req config used to produce them,
+                              preserved as a reproducible record of the
+                              inputs. Only written when the cmdlet is invoked
+                              in the __input parameter set; -ConfigFile mode
+                              leaves the caller's file alone.
     .EXAMPLE
         PS C:\> New-CertificateSigningRequest -CommonName www.myDomain.com
         Creates a new CSR and private key for www.myDomain.com
     .NOTES
-        Name:      New-CertificateSigningRequest
-        Author:    Justin Johns
-        Version:   0.2.1 | Last Edit: 2024-04-14
-        - 0.2.1 - (2024-04-14) Fixed bug
-        - 0.2.0 - (2024-03-08) Fixed SupportsShouldProcess, updated SAN input, renamed function
-        - 0.1.1 - (2022-06-20) Added SupportsShouldProcess
-        - 0.1.0 - Initial versions
-        General notes
-        Example commands
-        openssl req -newkey rsa:2048 -sha256 -keyout PRIVATEKEY.key -out MYCSR.csr -subj "/C=US/ST=CA/L=Redlands/O=Esri/CN=myDomain.com"
-        openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
+        Status: Stable
+
+        - Wildcard CNs (`*.example.com`) are rejected by the `CommonName`
+          ValidatePattern and so are unreachable via the `__input`
+          parameter set. Wildcard CSRs remain supported via `-ConfigFile`.
+          See the `CommonName` parameter help for the rationale.
     #>
     [Alias('New-CSR')]
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = '__conf')]
     Param(
-        [Parameter(HelpMessage = 'Output directory for CSR and key file')]
-        [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
+        [Parameter(HelpMessage = 'Output directory for generated files')]
+        [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
         [System.String] $OutputDirectory = "$HOME\Desktop",
-
-        [Parameter(HelpMessage = 'Validity period in days (default is 365)')]
-        [ValidateRange(30, 3650)]
-        [System.String] $Days = 365,
 
         [Parameter(Mandatory, ParameterSetName = '__conf', HelpMessage = 'Path to configuration template')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.conf' })]
@@ -63,7 +67,9 @@ function New-CertificateSigningRequest {
 
         [Parameter(Mandatory, ParameterSetName = '__input', HelpMessage = 'Common Name (CN)')]
         [Alias('CN')]
-        [ValidatePattern('^[\w\.-]+\.(com|org|gov)$')]
+        # TLD allow-list reflects the domain scope this module is deployed against.
+        # Update both CommonName and SubjectAlternativeName together if the policy changes.
+        [ValidatePattern('^[\w\.-]+\.(com|org|gov|info)$')]
         [System.String] $CommonName,
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Country Name (C)')]
@@ -97,111 +103,86 @@ function New-CertificateSigningRequest {
 
         [Parameter(ParameterSetName = '__input', HelpMessage = 'Subject Alternative Name (SAN)')]
         [Alias('SAN')]
+        # TLD allow-list must match CommonName above.
         [ValidatePattern('^[\w\.-]+\.(com|org|gov|info)$')]
-        [System.String[]] $SubjectAlternativeName
+        [System.String[]] $SubjectAlternativeName,
+
+        [Parameter(HelpMessage = 'RSA key size in bits (default 4096)')]
+        [ValidateSet(2048, 3072, 4096)]
+        [System.Int32] $KeySize = 4096
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
         Write-Verbose -Message ('Parameter Set: {0}' -f $PSCmdlet.ParameterSetName)
 
         # GET OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) {
-            Write-Verbose -Message ('Creating new folder named: {0}' -f (Split-Path -Path $OutputDirectory -Leaf))
-            New-Item -Path $OutputDirectory -ItemType Directory | Out-Null
-        }
+        Initialize-OutputDirectory -Path $OutputDirectory
 
         # BUILD CSR BASED ON PARAMETER INPUT
         if ($PSCmdlet.ParameterSetName -eq '__input') {
-            # CREATE NEW LIST
-            $template = [System.Collections.ArrayList]::new()
+            # CN is the source of truth for the artifact basename, so derive it
+            # here rather than reading it back from the rendered .conf.
+            $fileName = $CommonName
 
-            # ADD TEMPLATE TO LIST
-            $template.AddRange($CSR_Template)
+            # `*` is not a valid Windows filename character. The CommonName
+            # ValidatePattern currently rejects wildcards, so this rewrite is
+            # unreachable from the `__input` branch today; it is kept
+            # intentionally so that relaxing the regex in the future (when
+            # wildcard CSRs are again permitted by policy) does not require
+            # a parallel filename-sanitization change. The `__conf` branch
+            # below uses the same rewrite and IS reachable for wildcards.
+            if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
 
-            # ADD SUBJECT ALTERNATIVE NAMES TO LIST
-            if ($PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
-                # EVALUATE EACH SAN IN ARRAY
-                for ($i = 1; $i -lt ($SubjectAlternativeName.Count + 1); $i++) {
-                    # ADD SAN TO END OF COLLECTION
-                    $template.Add(('DNS.{0} = {1}' -f $i, $SubjectAlternativeName[$i - 1])) | Out-Null
-                }
+            # The .conf is intentionally preserved alongside the .csr / .key
+            # outputs as a reproducible record of the request inputs. Name it
+            # after the CN so all sibling artifacts group visually.
+            $configPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.conf' -f $fileName)
+
+            # DELEGATE TEMPLATE RENDERING TO PRIVATE HELPER
+            $buildParams = @{ CommonName = $CommonName; OutputPath = $configPath }
+            foreach ($key in 'Country', 'State', 'Locality', 'Organization', 'OrganizationalUnit', 'Email', 'SubjectAlternativeName') {
+                if ($PSBoundParameters.ContainsKey($key)) { $buildParams[$key] = $PSBoundParameters[$key] }
             }
-
-            # SET REPLACEMENT TOKENS
-            $tokenList = @{ CN = $CommonName }
-            if ($PSBoundParameters.ContainsKey('Country')) { $tokenList.Add('C', $Country) } else { $template.Remove('C = #C#') }
-            if ($PSBoundParameters.ContainsKey('State')) { $tokenList.Add('ST', $State) } else { $template.Remove('ST = #ST#') }
-            if ($PSBoundParameters.ContainsKey('Locality')) { $tokenList.Add('L', $Locality) } else { $template.Remove('L = #L#') }
-            if ($PSBoundParameters.ContainsKey('Organization')) { $tokenList.Add('O', $Organization) } else { $template.Remove('O = #O#') }
-            if ($PSBoundParameters.ContainsKey('OrganizationalUnit')) { $tokenList.Add('OU', $OrganizationalUnit) } else { $template.Remove('OU = #OU#') }
-            if ($PSBoundParameters.ContainsKey('Email')) { $tokenList.Add('E', $Email) } else { $template.Remove('emailAddress = "#E#"') }
-
-            # REMOVE SAN FROM TEMPLATE IF NOT PROVIDED
-            if (-Not $PSBoundParameters.ContainsKey('SubjectAlternativeName')) {
-                $template.Remove('[alt_names]')
-                $template.Remove('subjectAltName = @alt_names')
-            }
-
-            # REPLACE TOKENS IN TEMPLATE
-            foreach ($token in $tokenList.GetEnumerator()) {
-                $pattern = '#{0}#' -f $token.key
-                $template = $template -replace $pattern, $token.Value
-            }
-
-            # SHOW TEMPLATE
-            Write-Verbose -Message ("`n" + ($template -join "`n"))
-
-            # SET TEMPLATE FILE WITH NEW VALUES
-            $random = [System.IO.Path]::GetRandomFileName().Split('.')[0]
-            $configPath = Join-Path -Path $OutputDirectory -ChildPath ('csr_template_{0}.conf' -f $random)
-
-            # CREATE TEMPLATE FILE
-            Set-Content -Path $configPath -Value $template -Confirm:$false
-
-            # OUTPUT TEMPLATE PATH
-            Write-Verbose -Message ('Template file path: [{0}]' -f $configPath)
+            Build-CsrConfig @buildParams
         }
         else {
             $configPath = $ConfigFile
+
+            # SET FILE NAME (extract CN from caller-supplied config)
+            $selectPattern = Get-Content -Path $configPath | Select-String -Pattern '^CN = (.+)$'
+            $fileName = $selectPattern.Matches.Groups[1].Value
+
+            # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
+            if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
         }
-
-        # SET FILE NAME
-        $selectPattern = Get-Content -Path $configPath | Select-String -Pattern '^CN = (.+)$'
-        $fileName = $selectPattern.Matches.Groups[1].Value
-
-        # THE CHARACTER "*" IS NOT VALID IN A WINDOWS FILENAME. REPLACE "*" WITH "STAR"
-        if ($fileName -match '\*') { $fileName = $fileName.Replace('*', 'star') }
         Write-Verbose -Message ('New file name: {0}' -f $fileName)
 
-        # SET OPENSSL PARAMETERS
+        # SET OPENSSL ARGUMENTS
         # openssl req -new -newkey rsa:2048 -nodes -sha256 -out company_san.csr -keyout company_san.key -config req.conf
         # USING THE "-legacy" PARAMETER WILL MAINTAIN COMPATABILITY WITH CERTAIN SERVERS THAT DO NOT YET SUPPORT
         # THE LATEST CIPHERS OR PROTOCOLS
         # EXAMPLE> openssl pkcs12 -export -legacy -out example.pfx -inkey example.key -in example.crt
-        $sslParams = @{
-            FilePath     = 'openssl' # .exe
-            ArgumentList = @(
-                'req -new -nodes -days {0}' -f $Days
-                '-config {0}' -f $configPath
-                '-keyout {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName))
-                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName))
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
-        }
+        # NOTE: -days is intentionally NOT passed here. `openssl req` ignores it
+        # unless -x509 is also specified, and CSRs by design carry no validity
+        # period; the issuing CA sets validity at signing time.
+        # -newkey/-sha256 are emitted explicitly so the result is deterministic
+        # even when a custom -ConfigFile omits default_bits/default_md.
+        $keyoutPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}_PRIVATE.key' -f $fileName)
+        $csrOutPath = Join-Path -Path $OutputDirectory -ChildPath ('{0}.csr' -f $fileName)
+        $opensslArgs = @(
+            'req', '-new', '-nodes',
+            '-newkey', ('rsa:{0}' -f $KeySize),
+            '-sha256',
+            '-config', $configPath,
+            '-keyout', $keyoutPath,
+            '-out', $csrOutPath
+        )
 
         # SHOULD PROCESS
         if ($PSCmdlet.ShouldProcess($OutputDirectory, "Create Files")) {
 
             # INVOKE OPENSSL
-            $proc = Start-Process @sslParams
-
-            # CHECK FOR ERRORS
-            if ($proc.ExitCode -NE 0) {
-                # OUTPUT ERROR
-                Write-Error -Message ('openssl failed with exit code: {0}' -f $proc.ExitCode)
-            }
+            [System.Void] (Invoke-OpenSsl -ArgumentList $opensslArgs)
         }
     }
 }

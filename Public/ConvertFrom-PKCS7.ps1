@@ -16,7 +16,7 @@ function ConvertFrom-PKCS7 {
         PS C:\> ConvertFrom-PKCS7 -Path .\myCert.cer -OutputDirectory .\newFolder
         Converts a PKCS7 formatted certificate to non-PKCS7 format with .crt extension
     .NOTES
-        General notes
+        Status: Stable
     #>
     [CmdletBinding()]
     Param(
@@ -24,16 +24,15 @@ function ConvertFrom-PKCS7 {
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.crt', '*.cer', '*.pem' })]
         [System.String] $Path,
 
-        [Parameter(HelpMessage = 'Output directory for CSR and key file')]
-        [ValidateScript({ Test-Path -Path (Split-Path -Path $_) -PathType Container })]
+        [Parameter(HelpMessage = 'Output directory for generated files')]
+        [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
         [System.String] $OutputDirectory = "$HOME\Desktop"
     )
     Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+
         # GET OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) {
-            New-Item -Path $OutputDirectory -ItemType Directory
-            Write-Verbose -Message ('Created new folder: {0}' -f $OutputDirectory)
-        }
+        Initialize-OutputDirectory -Path $OutputDirectory
 
         # SET OUTPUT FILE NAME
         $name = '{0}.crt' -f (Split-Path -Path $Path -LeafBase)
@@ -42,20 +41,7 @@ function ConvertFrom-PKCS7 {
     End {
         # VERIFY SIGNED CERTIFICATE
         # openssl.exe pkcs7 -in certnew.p7b -print_certs -out $newFile
-        $sslParams = @{
-            FilePath     = 'openssl' # .exe
-            ArgumentList = @(
-                'pkcs7'
-                '-in {0}' -f $Path
-                '-print_certs'
-                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath $name)
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
-        }
-        $proc = Start-Process @sslParams
-
-        if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
+        $outFile = Join-Path -Path $OutputDirectory -ChildPath $name
+        [System.Void] (Invoke-OpenSsl -ArgumentList @('pkcs7', '-in', $Path, '-print_certs', '-out', $outFile))
     }
 }

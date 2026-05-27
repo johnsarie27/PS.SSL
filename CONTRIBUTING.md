@@ -21,30 +21,48 @@ To propose changes to the existing functions or the creation of a new one, the p
 
 ### Content
 
-The intended purpose of the functions in this module are internal functionality within the secure boundaries, specfically within virtual machines. There should be no dependency on outside libraries.
+The intended purpose of the functions in this module are internal functionality within the secure boundaries, specifically within virtual machines. There should be no dependency on outside libraries.
 
 ### Structure
 
-- Start with this general structure
+Start with this general structure:
 
-```pwsh
-function <FunctionName> {
+```powershell
+function Verb-Noun {
     <#
     .SYNOPSIS
-        
+        Brief one-liner describing what the function does.
     .DESCRIPTION
-       
+        Detailed explanation of the function's behavior, design decisions, or constraints.
+    .PARAMETER ParameterName
+        Description of the parameter. One-liner minimum, expand for complex parameters.
     .INPUTS
-        
+        Type accepted via pipeline (e.g., System.String, None).
     .OUTPUTS
-        
+        Type returned (e.g., System.IO.FileInfo, System.Boolean, PSCustomObject).
     .EXAMPLE
-        
+        PS C:\> Verb-Noun -ParameterName Value
+        Description of what this example demonstrates.
     .NOTES
+        Status: <Stable|Beta|Experimental|Deprecated>
+        References:
+        https://example.com/relevant-documentation
     #>
-
     [CmdletBinding()]
-    Param()
+    Param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [ValidateNotNullOrEmpty()]
+        [string] $ParameterName
+    )
+    Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    }
+    Process {
+        # Function logic here
+    }
+    End {
+        # Cleanup or final output
+    }
 }
 ```
 
@@ -65,8 +83,9 @@ Follow these steps:
 Ensure your changes are passing PSScriptAnalyzer and Pester tests.
 
 ```pwsh
-  ./Build/build.ps1 -ResolveDependency -TaskList Test # run pester
-  ./Build/build.ps1 -ResolveDependency -TaskList Analyze # run psscriptanalyzer
+./Build/build.ps1 -ResolveDependency -TaskList Test # run pester
+./Build/build.ps1 -ResolveDependency -TaskList Analyze # run psscriptanalyzer
+./Build/build.ps1 -TaskList Cleanup # remove the Artifacts and Staging folders created by Test/Analyze
 ```
 
 ## Release

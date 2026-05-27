@@ -4,8 +4,8 @@ function ConvertTo-PEM {
         Convert PFX/P12 file to PEM file
     .DESCRIPTION
         Convert PFX/P12 file to PEM file including private key
-    .PARAMETER PFX
-        Path to PFX file
+    .PARAMETER Path
+        Path to PFX file. Accepts the legacy alias -PFX.
     .PARAMETER OutputDirectory
         Path to plain text output directory
     .PARAMETER Password
@@ -15,19 +15,20 @@ function ConvertTo-PEM {
     .OUTPUTS
         None.
     .EXAMPLE
-        PS C:\> ConvertTo-PEM -PFX .\myCert.pfx -OutputDirectory .\newFolder -Password $pw
+        PS C:\> ConvertTo-PEM -Path .\myCert.pfx -OutputDirectory .\newFolder -Password $pw
         Converts myCert.pfx to myCert.pem exposing all certificate details in plain text
     .NOTES
-        General notes
+        Status: Stable
     #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory, HelpMessage = 'Path to PFX file')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.pfx", "*.p12" })]
-        [System.String] $PFX,
+        [Alias('PFX')]
+        [System.String] $Path,
 
-        [Parameter(HelpMessage = 'Output directory for PEM file')]
-        [ValidateScript( { Test-Path -Path (Split-Path -Path $_) -PathType Container })]
+        [Parameter(HelpMessage = 'Output directory for generated files')]
+        [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
         [System.String] $OutputDirectory = "$HOME\Desktop",
 
         [Parameter(Mandatory, HelpMessage = 'Password to PFX file')]
@@ -35,40 +36,30 @@ function ConvertTo-PEM {
         [System.Security.SecureString] $Password
     )
     Begin {
+        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+
         # VALIDATE PASSWORD
-        Get-PfxCertificate -FilePath $PFX -Password $Password -ErrorAction Stop | Out-Null
+        Get-PfxCertificate -FilePath $Path -Password $Password -ErrorAction Stop | Out-Null
 
         # GET OUTPUT DIRECTORY
-        if (-not (Test-Path -Path $OutputDirectory)) {
-            New-Item -Path $OutputDirectory -ItemType Directory
-            Write-Verbose -Message ('Created new folder: {0}' -f $OutputDirectory)
-        }
+        Initialize-OutputDirectory -Path $OutputDirectory
 
         # SET OUTPUT FILE NAME
-        $name = '{0}.pem' -f (Split-Path -Path $PFX -LeafBase)
+        $name = '{0}.pem' -f (Split-Path -Path $Path -LeafBase)
         Write-Verbose -Message ('Set filename to: {0}' -f $name)
-
-        # CREATE CREDENTIAL OBJECT WITH PASSWORD
-        $creds = [System.Management.Automation.PSCredential]::new('UserName', $Password)
     }
     End {
         # VERIFY SIGNED CERTIFICATE
-        # openssl pkcs12 -in <PFX_PATH> -out <FILE.TXT> -nodes
+        # openssl pkcs12 -in <PFX_PATH> -out <FILE.TXT> -nodes -passin env:PSSL_PASSIN
+        # PASS THE PASSWORD VIA AN ENVIRONMENT VARIABLE SCOPED TO THE OPENSSL
+        # CHILD PROCESS - never on argv, never in the parent session - so it
+        # is invisible to peer-process listings, ETW process-start events,
+        # and EDR command-line telemetry.
+        $outFile = Join-Path -Path $OutputDirectory -ChildPath $name
         $sslParams = @{
-            FilePath     = 'openssl' # .exe
-            ArgumentList = @(
-                'pkcs12'
-                '-in {0}' -f $PFX
-                '-out {0}' -f (Join-Path -Path $OutputDirectory -ChildPath $name)
-                '-nodes'
-                '-passin pass:{0}' -f $creds.GetNetworkCredential().Password
-            )
-            Wait         = $true
-            NoNewWindow  = $true
-            PassThru     = $true
+            ArgumentList        = @('pkcs12', '-in', $Path, '-out', $outFile, '-nodes', '-passin', 'env:PSSL_PASSIN')
+            EnvironmentVariable = @{ PSSL_PASSIN = $Password }
         }
-        $proc = Start-Process @sslParams
-
-        if ($proc.ExitCode -NE 0) { Write-Error -Message ('openssl exited with code: {0}' -f $proc.ExitCode) }
+        [System.Void] (Invoke-OpenSsl @sslParams)
     }
 }
