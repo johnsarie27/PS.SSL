@@ -50,53 +50,55 @@ function Get-CertificateData {
     Param(
         [Parameter(Mandatory, ValueFromPipeline, HelpMessage = 'Path to x509 certificate file')]
         [ValidateScript({
-                if (-not (Test-Path -Path $_ -PathType Leaf)) { Write-Error -Message "File not found: $_" -ErrorAction Stop }
+                if (-not (Test-Path -Path $_ -PathType Leaf)) {
+                    Write-Error -Message ('File not found: {0}' -f $_) -ErrorAction Stop
+                }
                 $ext = [System.IO.Path]::GetExtension($_).ToLowerInvariant()
                 if ($ext -notin '.crt', '.cer', '.pem') {
-                    Write-Error -Message "Unsupported extension '$ext'. Expected .crt, .cer, or .pem." -ErrorAction Stop
+                    Write-Error -Message ('Unsupported extension [{0}]. Expected .crt, .cer, or .pem.' -f $ext) -ErrorAction Stop
                 }
                 $true
             })]
         [System.String] $Path
     )
     Begin {
-        Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+        Write-Verbose -Message ('Starting {0}' -f $MyInvocation.MyCommand)
     }
     Process {
-        # Scan for PEM certificate blocks. This handles both single-cert files
-        # and bundles (e.g. fullchain.pem). DER files produce zero matches and
-        # fall through to the single-cert path unchanged.
+        # SCAN FOR PEM CERTIFICATE BLOCKS — HANDLES SINGLE-CERT FILES AND BUNDLES.
+        # ReadAllText IS USED OVER Get-Content -Raw BECAUSE THE LATTER RETURNS $null
+        # FOR EMPTY FILES, WHICH WOULD CAUSE Regex::Matches TO THROW.
         $pemPattern = '-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----'
         $blocks = [System.Text.RegularExpressions.Regex]::Matches(
             [System.IO.File]::ReadAllText($Path), $pemPattern)
 
         if ($blocks.Count -le 1) {
-            # Single cert or DER format — original behavior preserved.
+            # SINGLE CERT OR DER FORMAT — ORIGINAL BEHAVIOR PRESERVED
             $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f (New-Guid).ToString().Substring(0, 8))
             try {
                 [System.Void] (Invoke-OpenSsl -ArgumentList @('x509', '-in', $Path, '-outform', 'DER', '-out', $derPath))
                 [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
-                    [System.IO.File]::ReadAllBytes($derPath))
+                    (Get-Content -Path $derPath -AsByteStream -Raw))
             }
             finally {
-                if (Test-Path -Path $derPath) { Remove-Item -Path $derPath -Force -ErrorAction SilentlyContinue }
+                if (Test-Path -Path $derPath) { Remove-Item -Path $derPath -Force -ErrorAction Ignore }
             }
         }
         else {
-            # PEM bundle — emit one X509Certificate2 per block to the pipeline.
-            Write-Verbose -Message "Found $($blocks.Count) certificates in '$Path'"
+            # PEM BUNDLE — EMIT ONE X509Certificate2 PER BLOCK TO THE PIPELINE
+            Write-Verbose -Message ('Found [{0}] certificates in [{1}]' -f $blocks.Count, $Path)
             foreach ($block in $blocks) {
                 $tempPem = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.pem' -f (New-Guid).ToString().Substring(0, 8))
                 $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f (New-Guid).ToString().Substring(0, 8))
                 try {
-                    [System.IO.File]::WriteAllText($tempPem, $block.Value, [System.Text.Encoding]::ASCII)
+                    Set-Content -Path $tempPem -Value $block.Value -Encoding ASCII -NoNewline
                     [System.Void] (Invoke-OpenSsl -ArgumentList @('x509', '-in', $tempPem, '-outform', 'DER', '-out', $derPath))
                     [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
-                        [System.IO.File]::ReadAllBytes($derPath))
+                        (Get-Content -Path $derPath -AsByteStream -Raw))
                 }
                 finally {
-                    if (Test-Path -Path $tempPem) { Remove-Item -Path $tempPem -Force -ErrorAction SilentlyContinue }
-                    if (Test-Path -Path $derPath) { Remove-Item -Path $derPath -Force -ErrorAction SilentlyContinue }
+                    if (Test-Path -Path $tempPem) { Remove-Item -Path $tempPem -Force -ErrorAction Ignore }
+                    if (Test-Path -Path $derPath) { Remove-Item -Path $derPath -Force -ErrorAction Ignore }
                 }
             }
         }
