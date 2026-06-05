@@ -89,7 +89,7 @@ function Get-CertificateData {
                 $tempPem = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.pem' -f (New-Guid).ToString().Substring(0, 8))
                 $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f (New-Guid).ToString().Substring(0, 8))
                 try {
-                    [System.IO.File]::WriteAllText($tempPem, $block.Value)
+                    [System.IO.File]::WriteAllText($tempPem, $block.Value, [System.Text.Encoding]::ASCII)
                     [System.Void] (Invoke-OpenSsl -ArgumentList @('x509', '-in', $tempPem, '-outform', 'DER', '-out', $derPath))
                     [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
                         [System.IO.File]::ReadAllBytes($derPath))

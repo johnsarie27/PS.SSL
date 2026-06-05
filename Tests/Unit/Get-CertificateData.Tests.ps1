@@ -27,16 +27,16 @@ BeforeAll {
         "-----BEGIN CERTIFICATE-----`n$b64`n-----END CERTIFICATE-----"
     }
 
-    $cert1 = New-FixtureCert 'PSSL Unit Test'
-    $cert2 = New-FixtureCert 'PSSL Intermediate CA'
-    $cert3 = New-FixtureCert 'PSSL Root CA'
+    $script:cert1 = New-FixtureCert 'PSSL Unit Test'
+    $script:cert2 = New-FixtureCert 'PSSL Intermediate CA'
+    $script:cert3 = New-FixtureCert 'PSSL Root CA'
 
-    $script:fixtureDer         = $cert1.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
-    $script:fixtureDer2        = $cert2.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
-    $script:fixtureDer3        = $cert3.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
-    $script:fixtureThumbprint  = $cert1.Thumbprint
-    $script:fixtureThumbprint2 = $cert2.Thumbprint
-    $script:fixtureThumbprint3 = $cert3.Thumbprint
+    $script:fixtureDer         = $script:cert1.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+    $script:fixtureDer2        = $script:cert2.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+    $script:fixtureDer3        = $script:cert3.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+    $script:fixtureThumbprint  = $script:cert1.Thumbprint
+    $script:fixtureThumbprint2 = $script:cert2.Thumbprint
+    $script:fixtureThumbprint3 = $script:cert3.Thumbprint
 
     # Three-cert PEM bundle (leaf + intermediate + root) used in bundle tests.
     $script:bundlePem = (ConvertTo-PemString $script:fixtureDer) + "`n" +
@@ -45,6 +45,12 @@ BeforeAll {
 
     # Ordered DER bytes for the bundle, used by the stateful mock below.
     $script:bundleDerBytes = @($script:fixtureDer, $script:fixtureDer2, $script:fixtureDer3)
+}
+
+AfterAll {
+    $script:cert1.Dispose()
+    $script:cert2.Dispose()
+    $script:cert3.Dispose()
 }
 
 Describe 'Get-CertificateData' {
@@ -189,6 +195,25 @@ Describe 'Get-CertificateData' {
             Get-CertificateData -Path $script:bundlePath | Out-Null
             $derAfter  = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.der'  -ErrorAction SilentlyContinue)
             $pemAfter  = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.pem'  -ErrorAction SilentlyContinue)
+            $derAfter.Count | Should -Be $derBefore.Count
+            $pemAfter.Count | Should -Be $pemBefore.Count
+        }
+
+        It 'Propagates a terminating error when openssl fails mid-bundle and still cleans up temp files' {
+            Mock -ModuleName PS.SSL Invoke-OpenSsl {
+                if ($script:mockCallIndex -eq 1) { throw 'openssl error: invalid certificate' }
+                $outIndex = [System.Array]::IndexOf($ArgumentList, '-out')
+                if ($outIndex -ge 0 -and $outIndex + 1 -lt $ArgumentList.Length) {
+                    [System.IO.File]::WriteAllBytes($ArgumentList[$outIndex + 1], $script:bundleDerBytes[$script:mockCallIndex])
+                }
+                $script:mockCallIndex++
+                [PSCustomObject] @{ ExitCode = 0; StdOut = ''; StdErr = '' }
+            }
+            $derBefore = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.der' -ErrorAction SilentlyContinue)
+            $pemBefore = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.pem' -ErrorAction SilentlyContinue)
+            { Get-CertificateData -Path $script:bundlePath } | Should -Throw
+            $derAfter = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.der' -ErrorAction SilentlyContinue)
+            $pemAfter = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.pem' -ErrorAction SilentlyContinue)
             $derAfter.Count | Should -Be $derBefore.Count
             $pemAfter.Count | Should -Be $pemBefore.Count
         }
