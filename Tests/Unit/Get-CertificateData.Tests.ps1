@@ -8,25 +8,43 @@ BeforeAll {
     Get-Module -Name 'PS.SSL' -All | Remove-Module -Force -ErrorAction SilentlyContinue
     Import-Module -Name $manifestPath -Force
 
-    # A minimal valid DER blob that .NET X509Certificate2::new() will accept
-    # would still need to be a real cert. To avoid bundling a binary fixture,
-    # we generate a self-signed cert in-memory with .NET, export to DER, and
-    # have the mocked Invoke-OpenSsl write those bytes to the temp DER path.
-    $rsa = [System.Security.Cryptography.RSA]::Create(2048)
-    try {
-        $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
-            'CN=PSSL Unit Test',
-            $rsa,
-            [System.Security.Cryptography.HashAlgorithmName]::SHA256,
-            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
-        )
-        $cert = $req.CreateSelfSigned([datetimeoffset]::UtcNow.AddDays(-1), [datetimeoffset]::UtcNow.AddDays(30))
-        $script:fixtureDer  = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
-        $script:fixtureThumbprint = $cert.Thumbprint
+    # Generate in-memory self-signed certs for fixture use. We create three so
+    # that multi-cert bundle tests can verify count and individual thumbprints.
+    function New-FixtureCert ([string] $Subject) {
+        $rsa = [System.Security.Cryptography.RSA]::Create(2048)
+        try {
+            $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+                "CN=$Subject", $rsa,
+                [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+                [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
+            $req.CreateSelfSigned([datetimeoffset]::UtcNow.AddDays(-1), [datetimeoffset]::UtcNow.AddDays(30))
+        }
+        finally { $rsa.Dispose() }
     }
-    finally {
-        $rsa.Dispose()
+
+    function ConvertTo-PemString ([byte[]] $der) {
+        $b64 = [System.Convert]::ToBase64String($der, [System.Base64FormattingOptions]::InsertLineBreaks)
+        "-----BEGIN CERTIFICATE-----`n$b64`n-----END CERTIFICATE-----"
     }
+
+    $cert1 = New-FixtureCert 'PSSL Unit Test'
+    $cert2 = New-FixtureCert 'PSSL Intermediate CA'
+    $cert3 = New-FixtureCert 'PSSL Root CA'
+
+    $script:fixtureDer         = $cert1.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+    $script:fixtureDer2        = $cert2.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+    $script:fixtureDer3        = $cert3.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+    $script:fixtureThumbprint  = $cert1.Thumbprint
+    $script:fixtureThumbprint2 = $cert2.Thumbprint
+    $script:fixtureThumbprint3 = $cert3.Thumbprint
+
+    # Three-cert PEM bundle (leaf + intermediate + root) used in bundle tests.
+    $script:bundlePem = (ConvertTo-PemString $script:fixtureDer) + "`n" +
+                        (ConvertTo-PemString $script:fixtureDer2) + "`n" +
+                        (ConvertTo-PemString $script:fixtureDer3)
+
+    # Ordered DER bytes for the bundle, used by the stateful mock below.
+    $script:bundleDerBytes = @($script:fixtureDer, $script:fixtureDer2, $script:fixtureDer3)
 }
 
 Describe 'Get-CertificateData' {
@@ -86,7 +104,7 @@ Describe 'Get-CertificateData' {
             }
         }
 
-        It 'Passes the input file path to openssl via -in' {
+        It 'Passes the input file path to openssl via -in for a single-cert file' {
             Get-CertificateData -Path $script:certPath | Out-Null
             Should -Invoke -ModuleName PS.SSL -CommandName 'Invoke-OpenSsl' -Times 1 -Exactly -ParameterFilter {
                 $inIndex = [System.Array]::IndexOf($ArgumentList, '-in')
@@ -95,7 +113,7 @@ Describe 'Get-CertificateData' {
         }
     }
 
-    Context 'Return type' {
+    Context 'Return type — single certificate' {
 
         BeforeEach {
             $script:certPath = Join-Path $TestDrive 'cert.pem'
@@ -118,6 +136,61 @@ Describe 'Get-CertificateData' {
             Get-CertificateData -Path $script:certPath | Out-Null
             $tempAfter = Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.der' -ErrorAction SilentlyContinue
             $tempAfter.Count | Should -Be $tempBefore.Count
+        }
+    }
+
+    Context 'Multi-certificate PEM bundle' {
+
+        BeforeEach {
+            $script:bundlePath = Join-Path $TestDrive 'fullchain.pem'
+            Set-Content -Path $script:bundlePath -Value $script:bundlePem
+
+            # Stateful mock: each call writes the next cert's DER bytes so the
+            # returned objects reflect the correct per-block fixture thumbprints.
+            $script:mockCallIndex = 0
+            Mock -ModuleName PS.SSL Invoke-OpenSsl {
+                $outIndex = [System.Array]::IndexOf($ArgumentList, '-out')
+                if ($outIndex -ge 0 -and $outIndex + 1 -lt $ArgumentList.Length) {
+                    $outPath = $ArgumentList[$outIndex + 1]
+                    [System.IO.File]::WriteAllBytes($outPath, $script:bundleDerBytes[$script:mockCallIndex])
+                }
+                $script:mockCallIndex++
+                [PSCustomObject] @{ ExitCode = 0; StdOut = ''; StdErr = '' }
+            }
+        }
+
+        It 'Returns 3 X509Certificate2 objects for a 3-cert bundle' {
+            $results = @(Get-CertificateData -Path $script:bundlePath)
+            $results.Count | Should -Be 3
+        }
+
+        It 'Each returned object is an X509Certificate2 instance' {
+            $results = @(Get-CertificateData -Path $script:bundlePath)
+            foreach ($r in $results) {
+                $r | Should -BeOfType ([System.Security.Cryptography.X509Certificates.X509Certificate2])
+            }
+        }
+
+        It 'Invokes openssl once per certificate block' {
+            Get-CertificateData -Path $script:bundlePath | Out-Null
+            Should -Invoke -ModuleName PS.SSL -CommandName 'Invoke-OpenSsl' -Times 3 -Exactly
+        }
+
+        It 'Returns certificates in bundle order' {
+            $results = @(Get-CertificateData -Path $script:bundlePath)
+            $results[0].Thumbprint | Should -Be $script:fixtureThumbprint
+            $results[1].Thumbprint | Should -Be $script:fixtureThumbprint2
+            $results[2].Thumbprint | Should -Be $script:fixtureThumbprint3
+        }
+
+        It 'Cleans up all temporary PEM and DER files after processing the bundle' {
+            $derBefore = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.der'  -ErrorAction SilentlyContinue)
+            $pemBefore = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.pem'  -ErrorAction SilentlyContinue)
+            Get-CertificateData -Path $script:bundlePath | Out-Null
+            $derAfter  = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.der'  -ErrorAction SilentlyContinue)
+            $pemAfter  = @(Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter 'pssl-cert-*.pem'  -ErrorAction SilentlyContinue)
+            $derAfter.Count | Should -Be $derBefore.Count
+            $pemAfter.Count | Should -Be $pemBefore.Count
         }
     }
 }

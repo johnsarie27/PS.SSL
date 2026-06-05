@@ -24,11 +24,20 @@ function Get-CertificateData {
     .EXAMPLE
         PS C:\> (Get-CertificateData -Path .\example.pem).Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.17' } | ForEach-Object { $_.Format($true) }
         Print the Subject Alternative Name extension in human-readable form.
+    .EXAMPLE
+        PS C:\> Get-CertificateData -Path .\fullchain.pem | Select-Object Subject
+        Enumerate all certificates in a PEM bundle (leaf + intermediates + root).
+    .EXAMPLE
+        PS C:\> (Get-CertificateData -Path .\fullchain.pem).Count
+        Returns the number of certificates in the bundle.
     .NOTES
         Status: Beta
-        - PEM files containing multiple concatenated certificates (e.g.
-          fullchain.pem) are reduced to the FIRST certificate only. This
-          matches the previous behavior of `openssl x509 -text -noout`.
+        - PEM bundles containing multiple concatenated certificates (e.g.
+          fullchain.pem) are fully enumerated: one X509Certificate2 object
+          is emitted per BEGIN CERTIFICATE block. Wrap in @(...) if you need
+          array semantics when the file may contain only one certificate.
+        - DER-encoded files (.crt, .cer) and single-certificate PEM files
+          each emit exactly one object, preserving prior behavior.
         - openssl is used solely as a format-normalizer here; .NET's PEM
           file loaders (X509Certificate2.CreateFromPemFile) require .NET 5+
           and the module manifest declares PS 7.0 / .NET Core 3.1.
@@ -54,22 +63,42 @@ function Get-CertificateData {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
     }
     Process {
-        # Normalize PEM/CRT/CER input to DER bytes via openssl. We write to a
-        # temp file rather than capturing DER bytes from stdout because the
-        # Invoke-OpenSsl helper captures StdOut as a string, which would
-        # corrupt binary content.
-        $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f [System.Guid]::NewGuid().Guid.Substring(0, 8))
-        try {
-            $sslParams = @{
-                ArgumentList = @('x509', '-in', $Path, '-outform', 'DER', '-out', $derPath)
-            }
-            [System.Void] (Invoke-OpenSsl @sslParams)
+        # Scan for PEM certificate blocks. This handles both single-cert files
+        # and bundles (e.g. fullchain.pem). DER files produce zero matches and
+        # fall through to the single-cert path unchanged.
+        $pemPattern = '-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----'
+        $blocks = [System.Text.RegularExpressions.Regex]::Matches(
+            [System.IO.File]::ReadAllText($Path), $pemPattern)
 
-            $bytes = [System.IO.File]::ReadAllBytes($derPath)
-            [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($bytes)
+        if ($blocks.Count -le 1) {
+            # Single cert or DER format — original behavior preserved.
+            $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f [System.Guid]::NewGuid().Guid.Substring(0, 8))
+            try {
+                [System.Void] (Invoke-OpenSsl -ArgumentList @('x509', '-in', $Path, '-outform', 'DER', '-out', $derPath))
+                [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+                    [System.IO.File]::ReadAllBytes($derPath))
+            }
+            finally {
+                if (Test-Path -Path $derPath) { Remove-Item -Path $derPath -Force -ErrorAction SilentlyContinue }
+            }
         }
-        finally {
-            if (Test-Path -Path $derPath) { Remove-Item -Path $derPath -Force -ErrorAction SilentlyContinue }
+        else {
+            # PEM bundle — emit one X509Certificate2 per block to the pipeline.
+            Write-Verbose -Message "Found $($blocks.Count) certificates in '$Path'"
+            foreach ($block in $blocks) {
+                $tempPem = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.pem' -f [System.Guid]::NewGuid().Guid.Substring(0, 8))
+                $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f [System.Guid]::NewGuid().Guid.Substring(0, 8))
+                try {
+                    [System.IO.File]::WriteAllText($tempPem, $block.Value)
+                    [System.Void] (Invoke-OpenSsl -ArgumentList @('x509', '-in', $tempPem, '-outform', 'DER', '-out', $derPath))
+                    [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+                        [System.IO.File]::ReadAllBytes($derPath))
+                }
+                finally {
+                    if (Test-Path -Path $tempPem) { Remove-Item -Path $tempPem -Force -ErrorAction SilentlyContinue }
+                    if (Test-Path -Path $derPath) { Remove-Item -Path $derPath -Force -ErrorAction SilentlyContinue }
+                }
+            }
         }
     }
 }
