@@ -72,7 +72,7 @@ function Get-CertificateData {
 
         if ($blocks.Count -le 1) {
             # Single cert or DER format — original behavior preserved.
-            $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f [System.Guid]::NewGuid().Guid.Substring(0, 8))
+            $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f (New-Guid).ToString().Substring(0, 8))
             try {
                 [System.Void] (Invoke-OpenSsl -ArgumentList @('x509', '-in', $Path, '-outform', 'DER', '-out', $derPath))
                 [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
@@ -86,8 +86,8 @@ function Get-CertificateData {
             # PEM bundle — emit one X509Certificate2 per block to the pipeline.
             Write-Verbose -Message "Found $($blocks.Count) certificates in '$Path'"
             foreach ($block in $blocks) {
-                $tempPem = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.pem' -f [System.Guid]::NewGuid().Guid.Substring(0, 8))
-                $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f [System.Guid]::NewGuid().Guid.Substring(0, 8))
+                $tempPem = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.pem' -f (New-Guid).ToString().Substring(0, 8))
+                $derPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('pssl-cert-{0}.der' -f (New-Guid).ToString().Substring(0, 8))
                 try {
                     [System.IO.File]::WriteAllText($tempPem, $block.Value)
                     [System.Void] (Invoke-OpenSsl -ArgumentList @('x509', '-in', $tempPem, '-outform', 'DER', '-out', $derPath))
