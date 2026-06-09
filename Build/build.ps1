@@ -71,6 +71,12 @@ $invokePsakeParams = @{
     buildFile = (Join-Path -Path $env:BHProjectPath -ChildPath 'Build\build.psake.ps1')
     nologo    = $true
 }
+# Emit GitHub Actions workflow annotations (::error::, ::warning::) when
+# running under Actions so PSScriptAnalyzer and Pester failures surface as
+# inline PR annotations.
+if ($env:GITHUB_ACTIONS -eq 'true') {
+    $invokePsakeParams['OutputFormat'] = 'GitHubActions'
+}
 Invoke-psake @invokePsakeParams @PSBoundParameters
 
 Write-Output "`nFINISHED TASKS: $($TaskList -join ',')"
