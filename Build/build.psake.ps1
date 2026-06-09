@@ -1,3 +1,5 @@
+Version 5
+
 # PSake makes variables declared here available in other scriptblocks
 # Note: variables are set via Set-Variable rather than `$x = ...` so that
 # PSScriptAnalyzer's PSUseDeclaredVarsMoreThanAssignments rule does not
