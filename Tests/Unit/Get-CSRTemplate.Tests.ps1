@@ -42,7 +42,7 @@ Describe 'Get-CSRTemplate' {
         }
 
         It 'Starts with the [req] section header' {
-            $script:template[0] | Should -BeExactly '[req]'
+            $script:template[0] | Should -BeExactly '[INTENTIONAL FAIL - demo only]'
         }
 
         It 'Includes all required openssl req sections' {
