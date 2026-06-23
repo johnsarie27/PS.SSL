@@ -165,6 +165,14 @@ Task 'Test' -depends 'ImportStagingModule' {
     $PesterConfig.Run.Path = $TestScripts
     #$PesterConfig.Output.Verbosity = 'Diagnostic'
 
+    # Exclude tests tagged 'Network' from the gating build. These hit a real
+    # third-party TLS endpoint (badssl.com) and have proven flaky on CI
+    # runners - connectivity can pass the Discovery-time probe and still
+    # fail moments later when the test itself runs, intermittently failing
+    # otherwise-green builds. Run them explicitly (e.g.
+    # -Tag Network) when validating network connectivity locally.
+    $PesterConfig.Filter.ExcludeTag = 'Network'
+
     $TestResults = Invoke-Pester -Configuration $PesterConfig
 
     # Fail build if any tests fail
