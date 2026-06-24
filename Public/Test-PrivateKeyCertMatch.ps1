@@ -46,11 +46,11 @@ function Test-PrivateKeyCertMatch {
     [OutputType([System.Boolean])]
     Param(
         [Parameter(Mandatory, Position = 0, HelpMessage = 'Path to private key file')]
-        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.key", "*.pem" })]
+        [ValidateScript({ (Test-Path -Path $_ -PathType Leaf) -and ($_ -match '\.(key|pem)$') })]
         [System.String] $PrivateKeyPath,
 
         [Parameter(Mandatory, Position = 1, ValueFromPipeline, HelpMessage = 'Path to certificate file')]
-        [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include "*.crt", "*.cer", "*.pem" })]
+        [ValidateScript({ (Test-Path -Path $_ -PathType Leaf) -and ($_ -match '\.(crt|cer|pem)$') })]
         [System.String] $CertificatePath
     )
     Begin {
