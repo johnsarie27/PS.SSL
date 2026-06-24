@@ -32,9 +32,11 @@ Describe -Name 'PS.SSL module loader' -Fixture {
     It -Name 'does not warn about missing openssl when openssl is on PATH' -Skip:($IsWindows) -Test {
         # Linux/macOS branch checks @('/usr/bin','/usr/sbin','/sbin','/bin').
         # Hosted CI runners ship openssl in /usr/bin so this branch should be quiet.
+        # Stream redirection (3>&1) is used because Import-Module's
+        # -WarningVariable does not capture warnings from a module's .psm1 body.
         Get-Module -Name $env:BHProjectName -All | Remove-Module -Force -ErrorAction 'SilentlyContinue'
-        $warnings = @()
-        Import-Module -Name $env:BHPSModuleManifest -Force -WarningVariable 'warnings' -WarningAction 'SilentlyContinue'
-        ($warnings | Where-Object -FilterScript { $_ -match 'Openssl not found' }) | Should -BeNullOrEmpty
+        $warnings = & { Import-Module -Name $env:BHPSModuleManifest -Force } 3>&1 |
+            Where-Object -FilterScript { $_ -is [System.Management.Automation.WarningRecord] }
+        ($warnings | Where-Object -FilterScript { $_.Message -match 'Openssl not found' }) | Should -BeNullOrEmpty
     }
 }
