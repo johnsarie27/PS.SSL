@@ -29,7 +29,7 @@ function ConvertTo-PEM {
 
         [Parameter(HelpMessage = 'Output directory for generated files')]
         [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
-        [System.String] $OutputDirectory = "$HOME\Desktop",
+        [System.String] $OutputDirectory = (Join-Path -Path $HOME -ChildPath 'Desktop'),
 
         [Parameter(Mandatory, HelpMessage = 'Password to PFX file')]
         [ValidateNotNullOrEmpty()]

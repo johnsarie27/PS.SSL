@@ -26,7 +26,7 @@ function ConvertFrom-PKCS7 {
 
         [Parameter(HelpMessage = 'Output directory for generated files')]
         [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
-        [System.String] $OutputDirectory = "$HOME\Desktop"
+        [System.String] $OutputDirectory = (Join-Path -Path $HOME -ChildPath 'Desktop')
     )
     Begin {
         Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"

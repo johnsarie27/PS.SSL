@@ -49,7 +49,7 @@ function New-SelfSignedCertificate {
     Param(
         [Parameter(HelpMessage = 'Output directory for generated files')]
         [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
-        [System.String] $OutputDirectory = "$HOME\Desktop",
+        [System.String] $OutputDirectory = (Join-Path -Path $HOME -ChildPath 'Desktop'),
 
         [Parameter(HelpMessage = 'Validity period in days (default is 365)')]
         [ValidateRange(30, 3650)]
