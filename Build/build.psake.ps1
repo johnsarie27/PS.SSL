@@ -16,7 +16,19 @@ Properties {
     Set-Variable -Name 'lines' -Value '----------------------------------------------------------------------'
 
     # Pester
-    Set-Variable -Name 'TestScripts' -Value (Get-ChildItem "$ProjectRoot/Tests/*/*Tests.ps1")
+    # Cross-platform tests use the conventional *.Tests.ps1 suffix. Windows-only
+    # tests (Loader.Tests.windows.ps1) follow the SecurityTools pattern: the
+    # filename carries the platform gate so the build can pick them up only on
+    # Windows runners without per-test $IsWindows guards.
+    $crossPlatformTests = Get-ChildItem "$ProjectRoot/Tests/*/*Tests.ps1" |
+        Where-Object { $_.Name -notmatch '\.Tests\.windows\.ps1$' }
+    if ($IsWindows) {
+        $windowsTests = Get-ChildItem "$ProjectRoot/Tests/*/*.Tests.windows.ps1" -ErrorAction SilentlyContinue
+        Set-Variable -Name 'TestScripts' -Value ($crossPlatformTests + $windowsTests)
+    }
+    else {
+        Set-Variable -Name 'TestScripts' -Value $crossPlatformTests
+    }
     Set-Variable -Name 'TestFile' -Value "Test-Unit_$($Timestamp).xml"
 
     # Script Analyzer
