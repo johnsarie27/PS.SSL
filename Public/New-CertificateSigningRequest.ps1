@@ -59,7 +59,7 @@ function New-CertificateSigningRequest {
     Param(
         [Parameter(HelpMessage = 'Output directory for generated files')]
         [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
-        [System.String] $OutputDirectory = "$HOME\Desktop",
+        [System.String] $OutputDirectory = (Join-Path -Path $HOME -ChildPath 'Desktop'),
 
         [Parameter(Mandatory, ParameterSetName = '__conf', HelpMessage = 'Path to configuration template')]
         [ValidateScript({ Test-Path -Path $_ -PathType Leaf -Include '*.conf' })]

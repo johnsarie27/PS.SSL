@@ -34,7 +34,7 @@ function Export-PFX {
     Param(
         [Parameter(HelpMessage = 'Output directory for generated files')]
         [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
-        [System.String] $OutputDirectory = "$HOME\Desktop",
+        [System.String] $OutputDirectory = (Join-Path -Path $HOME -ChildPath 'Desktop'),
 
         [Parameter(Mandatory, HelpMessage = 'Password used to protect exported PFX file')]
         [ValidateNotNullOrEmpty()]

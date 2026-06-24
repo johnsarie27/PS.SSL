@@ -69,7 +69,7 @@ function Export-CertificateData {
 
         [Parameter(Position = 1, HelpMessage = 'Output directory for generated files')]
         [ValidateScript({ Test-OutputDirectoryPath -Path $_ })]
-        [System.String] $OutputDirectory = "$HOME\Desktop",
+        [System.String] $OutputDirectory = (Join-Path -Path $HOME -ChildPath 'Desktop'),
 
         [Parameter(Mandatory, Position = 2, HelpMessage = 'Data to export')]
         [ValidateSet('Certificate', 'Chain', 'PrivateKey')]
